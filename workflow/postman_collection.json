@@ -1,0 +1,255 @@
+{
+  "info": {
+    "name": "Brand Forge n8n API",
+    "description": "Postman collection for the Brand Forge n8n webhook endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5678/webhook/brand",
+      "type": "string"
+    },
+    {
+      "key": "brand_run_id",
+      "value": "test-run-1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Decode (Stripe)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Pre-request placeholder — no-op for now."
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "    pm.expect(pm.response.code).to.eql(200);",
+              "});",
+              "pm.test('copy.brand_name is a string', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.copy.brand_name).to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"url\": \"https://stripe.com\" }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/decode",
+          "host": ["{{baseUrl}}"],
+          "path": ["decode"]
+        }
+      }
+    },
+    {
+      "name": "Decode (Vercel)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Pre-request placeholder — no-op for now."
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "    pm.expect(pm.response.code).to.eql(200);",
+              "});",
+              "pm.test('copy.brand_name is a string', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.copy.brand_name).to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"url\": \"https://vercel.com\" }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/decode",
+          "host": ["{{baseUrl}}"],
+          "path": ["decode"]
+        }
+      }
+    },
+    {
+      "name": "Decode (Linear)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Pre-request placeholder — no-op for now."
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "    pm.expect(pm.response.code).to.eql(200);",
+              "});",
+              "pm.test('copy.brand_name is a string', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.copy.brand_name).to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"url\": \"https://linear.app\" }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/decode",
+          "host": ["{{baseUrl}}"],
+          "path": ["decode"]
+        }
+      }
+    },
+    {
+      "name": "Design",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"brand_run_id\": \"{{brand_run_id}}\",\n  \"source_url\": \"https://stripe.com\",\n  \"branding\": {\n    \"colors\": [\"#635BFF\", \"#0A2540\", \"#FFFFFF\"],\n    \"fonts\": [\"Sohne\", \"Camphor\"],\n    \"logo\": \"https://stripe.com/img/v3/home/social.png\"\n  },\n  \"copy\": {\n    \"brand_name\": \"Stripe\",\n    \"tagline\": \"Financial infrastructure for the internet\",\n    \"hero_headline\": \"Payments infrastructure for the internet\",\n    \"tone\": [\"confident\", \"technical\", \"premium\"]\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/design",
+          "host": ["{{baseUrl}}"],
+          "path": ["design"]
+        }
+      }
+    },
+    {
+      "name": "HTML",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"brand_run_id\": \"{{brand_run_id}}\",\n  \"design_md\": \"# Stripe Landing Page Design\\n\\n## At a glance\\nA premium, developer-first payments brand. Confident, technical, and minimal. The hero leans on a deep navy backdrop with vibrant indigo accents and crisp white type. Generous whitespace, sharp grid alignment, subtle motion.\\n\\n## Color palette\\n- Primary: #635BFF (indigo) — CTAs, links, accent strokes\\n- Ink: #0A2540 (deep navy) — body backgrounds, headings\\n- Surface: #FFFFFF — cards, content surfaces\\n- Use 60/30/10 split: 60% surface, 30% ink, 10% indigo\\n\\n## Typography\\n- Display: Sohne, 56–72px, tight tracking (-0.02em), weight 600\\n- Body: Camphor, 16–18px, 1.6 line-height, weight 400\\n- Mono accents for code samples in feature sections\\n\\n## Sections\\n1. Hero — large headline + sub + dual CTA\\n2. Logo strip — social proof\\n3. Feature grid — 3 columns, icon + title + paragraph\\n4. Code sample — dark card, syntax highlighted\\n5. Testimonial — single quote, large type\\n6. Pricing teaser — two cards\\n7. CTA band — indigo background\\n8. Footer — minimal links\\n\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/html",
+          "host": ["{{baseUrl}}"],
+          "path": ["html"]
+        }
+      }
+    },
+    {
+      "name": "Assets",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"brand_run_id\": \"{{brand_run_id}}\",\n  \"branding\": {\n    \"colors\": [\"#635BFF\", \"#0A2540\", \"#FFFFFF\"],\n    \"fonts\": [\"Sohne\", \"Camphor\"],\n    \"logo\": \"https://stripe.com/img/v3/home/social.png\"\n  },\n  \"copy\": {\n    \"brand_name\": \"Stripe\",\n    \"tagline\": \"Financial infrastructure for the internet\",\n    \"hero_headline\": \"Payments infrastructure for the internet\",\n    \"tone\": [\"confident\", \"technical\", \"premium\"]\n  },\n  \"design_md\": \"# Stripe Visual Direction\\n\\n## At a glance\\nPremium developer-first payments brand. Deep navy + indigo accents on white.\\n\\n## Palette\\n- #635BFF indigo (accent)\\n- #0A2540 navy (ink)\\n- #FFFFFF white (surface)\\n\\n## Typography\\nSohne display, Camphor body. Tight tracking, generous whitespace.\\n\\n## Mood\\nConfident, technical, minimal. Sharp grids, soft gradients on hero only.\\n\",\n  \"strategy\": {\n    \"brand_archetype\": \"The Sage\",\n    \"mood_keywords\": [\"confident\", \"technical\", \"premium\", \"minimal\", \"trustworthy\"]\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/assets",
+          "host": ["{{baseUrl}}"],
+          "path": ["assets"]
+        }
+      }
+    }
+  ]
+}

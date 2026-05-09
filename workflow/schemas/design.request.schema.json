@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/design.request.json",
+  "title": "DesignRequest",
+  "description": "Request body for POST /webhook/brand/design — pass the whole decode response back, plus brand_run_id.",
+  "type": "object",
+  "properties": {
+    "brand_run_id": { "type": "string" },
+    "source_url": { "type": "string", "format": "uri" },
+    "branding": { "type": "object", "additionalProperties": true },
+    "copy": { "type": "object", "additionalProperties": true }
+  },
+  "required": ["brand_run_id"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "brand_run_id": "test-run-1",
+      "source_url": "https://stripe.com",
+      "branding": {
+        "colors": ["#635BFF", "#0A2540", "#FFFFFF"],
+        "fonts": ["Sohne", "Camphor"],
+        "logo": "https://stripe.com/img/v3/home/social.png"
+      },
+      "copy": {
+        "brand_name": "Stripe",
+        "tagline": "Financial infrastructure for the internet",
+        "hero_headline": "Payments infrastructure for the internet",
+        "tone": ["confident", "technical", "premium"]
+      }
+    }
+  ]
+}

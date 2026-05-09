@@ -1,0 +1,37 @@
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: brand-forge-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      WEBHOOK_URL: http://localhost:5678/
+      GENERIC_TIMEZONE: UTC
+    volumes:
+      # Bind mount so you can inspect/edit workflows on the host.
+      - ./n8n_data:/home/node/.n8n
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5678/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  web:
+    build:
+      context: ./web
+    container_name: brand-forge-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      N8N_BASE_URL: http://n8n:5678/webhook/brand
+      # KIMI_API_KEY is read from the repo-root .env by docker compose.
+      # Copy .env.docker.example to .env and fill in your key.
+      KIMI_API_KEY: ${KIMI_API_KEY}
+    depends_on:
+      n8n:
+        condition: service_healthy

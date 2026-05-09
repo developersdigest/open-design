@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/decode.response.json",
+  "title": "DecodeResponse",
+  "description": "Response body for POST /webhook/brand/decode.",
+  "type": "object",
+  "properties": {
+    "source_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "branding": {
+      "type": "object",
+      "description": "Firecrawl branding tokens — colors, fonts, logo, etc.",
+      "additionalProperties": true
+    },
+    "copy": {
+      "type": "object",
+      "properties": {
+        "brand_name": { "type": "string" },
+        "tagline": { "type": "string" },
+        "hero_headline": { "type": "string" },
+        "hero_subheadline": { "type": "string" },
+        "primary_cta": { "type": "string" },
+        "three_bullets": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "tone": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["brand_name", "tagline", "hero_headline", "tone"],
+      "additionalProperties": true
+    },
+    "tokens": {
+      "type": "object",
+      "description": "Kimi token usage stats.",
+      "additionalProperties": true
+    }
+  },
+  "required": ["source_url", "branding", "copy"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "source_url": "https://stripe.com",
+      "branding": {
+        "colors": ["#635BFF", "#0A2540", "#FFFFFF"],
+        "fonts": ["Sohne", "Camphor"],
+        "logo": "https://stripe.com/img/v3/home/social.png"
+      },
+      "copy": {
+        "brand_name": "Stripe",
+        "tagline": "Financial infrastructure for the internet",
+        "hero_headline": "Payments infrastructure for the internet",
+        "hero_subheadline": "Millions of businesses use Stripe.",
+        "primary_cta": "Start now",
+        "three_bullets": ["Global scale", "Developer-first", "Battle-tested"],
+        "tone": ["confident", "technical", "premium"]
+      },
+      "tokens": { "input": 1200, "output": 320 }
+    }
+  ]
+}

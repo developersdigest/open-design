@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/html.request.json",
+  "title": "HtmlRequest",
+  "description": "Request body for POST /webhook/brand/html.",
+  "type": "object",
+  "properties": {
+    "brand_run_id": { "type": "string" },
+    "design_md": {
+      "type": "string",
+      "description": "Markdown design specification produced by /design."
+    }
+  },
+  "required": ["brand_run_id", "design_md"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "brand_run_id": "test-run-1",
+      "design_md": "# Stripe Landing Page Design\n\n## Sections\n1. Hero\n2. Logo strip\n..."
+    }
+  ]
+}

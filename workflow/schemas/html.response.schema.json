@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/html.response.json",
+  "title": "HtmlResponse",
+  "description": "Response body for POST /webhook/brand/html — generated 8-section landing page HTML.",
+  "type": "object",
+  "properties": {
+    "html": {
+      "type": "string",
+      "description": "Full HTML document string."
+    },
+    "outline": {
+      "type": "object",
+      "properties": {
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string" },
+              "heading": { "type": "string" }
+            },
+            "required": ["type", "heading"],
+            "additionalProperties": true
+          }
+        }
+      },
+      "required": ["sections"],
+      "additionalProperties": true
+    },
+    "tokens_total": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": ["html", "outline"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "html": "<!doctype html><html><head><title>Stripe</title></head><body>...</body></html>",
+      "outline": {
+        "sections": [
+          { "type": "hero", "heading": "Payments infrastructure for the internet" },
+          { "type": "logo_strip", "heading": "Trusted by" },
+          { "type": "feature_grid", "heading": "Why Stripe" }
+        ]
+      },
+      "tokens_total": 8200
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+@baseUrl = http://localhost:5678/webhook/brand
+@brand_run_id = test-run
+
+### name: decodeStripe
+POST {{baseUrl}}/decode-stripe
+Content-Type: application/json
+
+{
+  "brand_run_id": "{{brand_run_id}}",
+  "image_url": "https://example.com/stripe.png"
+}
+
+### name: extractPalette
+POST {{baseUrl}}/extract-palette
+Content-Type: application/json
+
+{
+  "brand_run_id": "{{brand_run_id}}",
+  "source_url": "https://example.com/logo.png"
+}
+
+### name: generateTokens
+POST {{baseUrl}}/generate-tokens
+Content-Type: application/json
+
+{
+  "brand_run_id": "{{brand_run_id}}"
+}
+
+### name: publishBrand
+POST {{baseUrl}}/publish
+Content-Type: application/json
+
+{
+  "brand_run_id": "{{brand_run_id}}"
+}

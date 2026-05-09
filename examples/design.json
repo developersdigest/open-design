@@ -1,0 +1,15 @@
+{
+  "brand_run_id": "test-run-1",
+  "source_url": "https://stripe.com",
+  "branding": {
+    "colors": ["#635BFF", "#0A2540", "#FFFFFF"],
+    "fonts": ["Sohne", "Camphor"],
+    "logo": "https://stripe.com/img/v3/home/social.png"
+  },
+  "copy": {
+    "brand_name": "Stripe",
+    "tagline": "Financial infrastructure for the internet",
+    "hero_headline": "Payments infrastructure for the internet",
+    "tone": ["confident", "technical", "premium"]
+  }
+}

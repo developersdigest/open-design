@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/decode.request.json",
+  "title": "DecodeRequest",
+  "description": "Request body for POST /webhook/brand/decode — scrape a URL and produce hero copy.",
+  "type": "object",
+  "properties": {
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Public URL to decode."
+    }
+  },
+  "required": ["url"],
+  "additionalProperties": true,
+  "examples": [
+    { "url": "https://stripe.com" }
+  ]
+}

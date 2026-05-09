@@ -1,0 +1,19 @@
+{
+  "brand_run_id": "test-run-1",
+  "branding": {
+    "colors": ["#635BFF", "#0A2540", "#FFFFFF"],
+    "fonts": ["Sohne", "Camphor"],
+    "logo": "https://stripe.com/img/v3/home/social.png"
+  },
+  "copy": {
+    "brand_name": "Stripe",
+    "tagline": "Financial infrastructure for the internet",
+    "hero_headline": "Payments infrastructure for the internet",
+    "tone": ["confident", "technical", "premium"]
+  },
+  "design_md": "# Stripe Visual Direction\n\n## At a glance\nPremium developer-first payments brand. Deep navy + indigo accents on white.\n\n## Palette\n- #635BFF indigo (accent)\n- #0A2540 navy (ink)\n- #FFFFFF white (surface)\n\n## Typography\nSohne display, Camphor body. Tight tracking, generous whitespace.\n\n## Mood\nConfident, technical, minimal. Sharp grids, soft gradients on hero only.\n",
+  "strategy": {
+    "brand_archetype": "The Sage",
+    "mood_keywords": ["confident", "technical", "premium", "minimal", "trustworthy"]
+  }
+}

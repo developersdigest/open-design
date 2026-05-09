@@ -1,0 +1,72 @@
+name: Bug report
+description: Report a problem with the n8n demo
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill out the fields below so we can reproduce and fix it quickly.
+  - type: input
+    id: what-happened
+    attributes:
+      label: What happened
+      description: A clear, concise description of the problem.
+    validations:
+      required: true
+  - type: input
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      description: Which part of the project is affected?
+      options:
+        - n8n workflow
+        - Next.js web app
+        - Smoke test
+        - Docker
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Step-by-step instructions to reproduce the issue.
+      placeholder: |
+        1. Run ...
+        2. Trigger ...
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      description: Paste any relevant output, stack traces, or screenshots.
+      placeholder: paste relevant output, redact API keys
+      render: shell
+  - type: input
+    id: n8n-version
+    attributes:
+      label: n8n version
+      placeholder: "2.17.7"
+  - type: input
+    id: bun-version
+    attributes:
+      label: Bun version
+      description: Output of `bun --version`
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I checked Troubleshooting in README
+          required: false
+        - label: I redacted secrets
+          required: false

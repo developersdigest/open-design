@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/design.response.json",
+  "title": "DesignResponse",
+  "description": "Response body for POST /webhook/brand/design.",
+  "type": "object",
+  "properties": {
+    "design_md": {
+      "type": "string",
+      "description": "Markdown-formatted design specification."
+    },
+    "strategy": {
+      "type": "object",
+      "properties": {
+        "brand_archetype": {
+          "type": "string",
+          "enum": [
+            "The Sage",
+            "The Hero",
+            "The Outlaw",
+            "The Explorer",
+            "The Creator",
+            "The Ruler",
+            "The Magician",
+            "The Lover",
+            "The Caregiver",
+            "The Jester",
+            "The Everyman",
+            "The Innocent"
+          ]
+        },
+        "mood_keywords": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "voice_examples": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["brand_archetype", "mood_keywords"],
+      "additionalProperties": true
+    },
+    "tokens_total": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": ["design_md", "strategy"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "design_md": "# Stripe Landing Page Design\n\n## At a glance\nA premium, developer-first payments brand...",
+      "strategy": {
+        "brand_archetype": "The Sage",
+        "mood_keywords": ["confident", "technical", "premium", "minimal", "trustworthy"],
+        "voice_examples": ["Built for developers, trusted by enterprises."]
+      },
+      "tokens_total": 4200
+    }
+  ]
+}

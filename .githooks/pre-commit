@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Pre-commit hook for n8n-demo
+set -u
+
+FAILED=0
+STAGED=$(git diff --cached --name-only)
+
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+echo "[pre-commit] running checks on staged files..."
+
+# 1. Validate workflow JSON if staged
+if echo "$STAGED" | grep -qx "workflow/brand-api.json"; then
+  echo "[pre-commit] workflow/brand-api.json changed -- running validate-workflow.py"
+  if ! python3 scripts/validate-workflow.py; then
+    echo "[pre-commit] workflow validation FAILED"
+    FAILED=1
+  else
+    echo "[pre-commit] workflow validation passed"
+  fi
+fi
+
+# 2. Web checks
+if echo "$STAGED" | grep -q "^web/"; then
+  if [ -d "web/node_modules" ]; then
+    echo "[pre-commit] web/ changed -- running typecheck"
+    if ! (cd web && bun run typecheck); then
+      echo "[pre-commit] typecheck FAILED"
+      FAILED=1
+    else
+      echo "[pre-commit] typecheck passed"
+    fi
+
+    # 3. Biome lint if available
+    if [ -d "web/node_modules/@biomejs" ] || [ -x "web/node_modules/.bin/biome" ]; then
+      echo "[pre-commit] biome detected -- running lint"
+      if ! (cd web && bun run lint); then
+        echo "[pre-commit] lint FAILED"
+        FAILED=1
+      else
+        echo "[pre-commit] lint passed"
+      fi
+    else
+      echo "[pre-commit] biome not installed -- skipping lint"
+    fi
+  else
+    echo "[pre-commit] web/node_modules missing -- skipping typecheck/lint (run 'cd web && bun install')"
+  fi
+fi
+
+if [ "$FAILED" -ne 0 ]; then
+  echo "[pre-commit] one or more checks failed."
+  echo "[pre-commit] to bypass (use sparingly): git commit --no-verify"
+  exit 1
+fi
+
+echo "[pre-commit] all checks passed"
+exit 0

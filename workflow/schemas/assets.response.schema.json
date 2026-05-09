@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/assets.response.json",
+  "title": "AssetsResponse",
+  "description": "Response body for POST /webhook/brand/assets — 4 marketing images via Fal flux/schnell.",
+  "type": "object",
+  "properties": {
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["hero", "ig_post", "og_card", "ig_story"]
+          },
+          "url": { "type": "string", "format": "uri" },
+          "width": { "type": "integer", "minimum": 1 },
+          "height": { "type": "integer", "minimum": 1 },
+          "prompt": { "type": "string" }
+        },
+        "required": ["type", "url", "width", "height", "prompt"],
+        "additionalProperties": true
+      }
+    },
+    "mocked": { "type": "boolean" }
+  },
+  "required": ["assets", "mocked"],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "assets": [
+        { "type": "hero",     "url": "https://fal.media/files/hero.png",     "width": 1024, "height": 576,  "prompt": "Premium developer-first payments hero" },
+        { "type": "ig_post",  "url": "https://fal.media/files/ig_post.png",  "width": 1080, "height": 1080, "prompt": "Square IG post" },
+        { "type": "og_card",  "url": "https://fal.media/files/og_card.png",  "width": 1200, "height": 630,  "prompt": "OG card" },
+        { "type": "ig_story", "url": "https://fal.media/files/ig_story.png", "width": 1080, "height": 1920, "prompt": "IG story" }
+      ],
+      "mocked": false
+    }
+  ]
+}

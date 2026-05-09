@@ -1,0 +1,157 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-04-29T12:00:41.000Z",
+  "__export_source": "n8n-demo-brand-forge",
+  "resources": [
+    {
+      "_id": "wrk_brand_forge",
+      "_type": "workspace",
+      "name": "n8n Brand Forge",
+      "description": "Brand webhook demo",
+      "scope": "collection",
+      "parentId": null
+    },
+    {
+      "_id": "env_brand_forge_base",
+      "_type": "environment",
+      "name": "Base Environment",
+      "parentId": "wrk_brand_forge",
+      "data": {
+        "baseUrl": "http://localhost:5678/webhook/brand",
+        "brand_run_id": "test-run-1"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "baseUrl",
+          "brand_run_id"
+        ]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1
+    },
+    {
+      "_id": "fld_brand_webhooks",
+      "_type": "request_group",
+      "parentId": "wrk_brand_forge",
+      "name": "Brand Webhooks",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1
+    },
+    {
+      "_id": "req_decode",
+      "_type": "request",
+      "parentId": "fld_brand_webhooks",
+      "name": "POST /decode",
+      "method": "POST",
+      "url": "{{baseUrl}}/decode",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"url\": \"https://stripe.com\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": -1000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_design",
+      "_type": "request",
+      "parentId": "fld_brand_webhooks",
+      "name": "POST /design",
+      "method": "POST",
+      "url": "{{baseUrl}}/design",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"brand_run_id\": \"test-run-1\",\n  \"source_url\": \"https://stripe.com\",\n  \"branding\": {\n    \"colors\": [\n      \"#635BFF\",\n      \"#0A2540\",\n      \"#FFFFFF\"\n    ],\n    \"fonts\": [\n      \"Sohne\",\n      \"Camphor\"\n    ],\n    \"logo\": \"https://stripe.com/img/v3/home/social.png\"\n  },\n  \"copy\": {\n    \"brand_name\": \"Stripe\",\n    \"tagline\": \"Financial infrastructure for the internet\",\n    \"hero_headline\": \"Payments infrastructure for the internet\",\n    \"tone\": [\n      \"confident\",\n      \"technical\",\n      \"premium\"\n    ]\n  }\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": -999,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_html",
+      "_type": "request",
+      "parentId": "fld_brand_webhooks",
+      "name": "POST /html",
+      "method": "POST",
+      "url": "{{baseUrl}}/html",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"brand_run_id\": \"test-run-1\",\n  \"design_md\": \"# Stripe Landing Page Design\\n\\n## At a glance\\nA premium, developer-first payments brand. Confident, technical, and minimal. The hero leans on a deep navy backdrop with vibrant indigo accents and crisp white type. Generous whitespace, sharp grid alignment, subtle motion.\\n\\n## Color palette\\n- Primary: #635BFF (indigo) \\u2014 CTAs, links, accent strokes\\n- Ink: #0A2540 (deep navy) \\u2014 body backgrounds, headings\\n- Surface: #FFFFFF \\u2014 cards, content surfaces\\n- Use 60/30/10 split: 60% surface, 30% ink, 10% indigo\\n\\n## Typography\\n- Display: Sohne, 56\\u201372px, tight tracking (-0.02em), weight 600\\n- Body: Camphor, 16\\u201318px, 1.6 line-height, weight 400\\n- Mono accents for code samples in feature sections\\n\\n## Sections\\n1. Hero \\u2014 large headline + sub + dual CTA\\n2. Logo strip \\u2014 social proof\\n3. Feature grid \\u2014 3 columns, icon + title + paragraph\\n4. Code sample \\u2014 dark card, syntax highlighted\\n5. Testimonial \\u2014 single quote, large type\\n6. Pricing teaser \\u2014 two cards\\n7. CTA band \\u2014 indigo background\\n8. Footer \\u2014 minimal links\\n\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": -998,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_assets",
+      "_type": "request",
+      "parentId": "fld_brand_webhooks",
+      "name": "POST /assets",
+      "method": "POST",
+      "url": "{{baseUrl}}/assets",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"brand_run_id\": \"test-run-1\",\n  \"branding\": {\n    \"colors\": [\n      \"#635BFF\",\n      \"#0A2540\",\n      \"#FFFFFF\"\n    ],\n    \"fonts\": [\n      \"Sohne\",\n      \"Camphor\"\n    ],\n    \"logo\": \"https://stripe.com/img/v3/home/social.png\"\n  },\n  \"copy\": {\n    \"brand_name\": \"Stripe\",\n    \"tagline\": \"Financial infrastructure for the internet\",\n    \"hero_headline\": \"Payments infrastructure for the internet\",\n    \"tone\": [\n      \"confident\",\n      \"technical\",\n      \"premium\"\n    ]\n  },\n  \"design_md\": \"# Stripe Visual Direction\\n\\n## At a glance\\nPremium developer-first payments brand. Deep navy + indigo accents on white.\\n\\n## Palette\\n- #635BFF indigo (accent)\\n- #0A2540 navy (ink)\\n- #FFFFFF white (surface)\\n\\n## Typography\\nSohne display, Camphor body. Tight tracking, generous whitespace.\\n\\n## Mood\\nConfident, technical, minimal. Sharp grids, soft gradients on hero only.\\n\",\n  \"strategy\": {\n    \"brand_archetype\": \"The Sage\",\n    \"mood_keywords\": [\n      \"confident\",\n      \"technical\",\n      \"premium\",\n      \"minimal\",\n      \"trustworthy\"\n    ]\n  }\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": -997,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    }
+  ]
+}

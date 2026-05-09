@@ -1,0 +1,264 @@
+openapi: 3.1.0
+info:
+  title: Brand Forge n8n API
+  version: 0.1.0
+  summary: n8n webhook API for decoding brands and generating design specs, landing HTML, and marketing assets.
+servers:
+  - url: http://localhost:5678/webhook/brand
+    description: Default local n8n webhook base
+  - url: "{n8n_base_url}"
+    description: Custom n8n base URL (include the /webhook/brand suffix)
+    variables:
+      n8n_base_url:
+        default: http://localhost:5678/webhook/brand
+        description: Base URL for the n8n brand webhook routes
+paths:
+  /decode:
+    post:
+      operationId: decodeBrand
+      summary: Scrape a URL and produce branding tokens plus hero copy.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: https://stripe.com
+      responses:
+        '200':
+          description: Decoded brand context
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecodeResponse'
+        '502':
+          description: Upstream error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /design:
+    post:
+      operationId: generateDesign
+      summary: Take decoded brand context and return a strategy plus design.md spec.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [brand_run_id, source_url, branding, copy]
+              properties:
+                brand_run_id:
+                  type: string
+                  example: run_001
+                source_url:
+                  type: string
+                  format: uri
+                branding:
+                  $ref: '#/components/schemas/BrandingTokens'
+                copy:
+                  $ref: '#/components/schemas/BrandCopy'
+      responses:
+        '200':
+          description: Design markdown and strategy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesignResponse'
+        '502':
+          description: Upstream error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /html:
+    post:
+      operationId: generateHtml
+      summary: Generate an 8-section landing page HTML from a design.md spec.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [brand_run_id, design_md]
+              properties:
+                brand_run_id:
+                  type: string
+                design_md:
+                  type: string
+      responses:
+        '200':
+          description: Landing page HTML and outline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HtmlResponse'
+        '502':
+          description: Upstream error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /assets:
+    post:
+      operationId: generateAssets
+      summary: Generate hero, IG post, OG card, and IG story marketing images via Fal GPT Image 2.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [brand_run_id, branding, copy, design_md, strategy]
+              properties:
+                brand_run_id:
+                  type: string
+                branding:
+                  $ref: '#/components/schemas/BrandingTokens'
+                copy:
+                  $ref: '#/components/schemas/BrandCopy'
+                design_md:
+                  type: string
+                strategy:
+                  $ref: '#/components/schemas/Strategy'
+      responses:
+        '200':
+          description: Generated marketing assets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsResponse'
+        '502':
+          description: Upstream error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    BrandingTokens:
+      type: object
+      description: Firecrawl-derived branding tokens.
+      properties:
+        colors:
+          type: array
+          items:
+            type: string
+          example: ["#635bff", "#0a2540"]
+        fonts:
+          type: array
+          items:
+            type: string
+          example: ["Sohne"]
+        logo:
+          type: string
+          format: uri
+      additionalProperties: true
+    BrandCopy:
+      type: object
+      required: [brand_name, tagline, hero_headline, tone]
+      properties:
+        brand_name:
+          type: string
+        tagline:
+          type: string
+        hero_headline:
+          type: string
+        tone:
+          type: array
+          items:
+            type: string
+    Strategy:
+      type: object
+      properties:
+        brand_archetype:
+          type: string
+          example: The Ruler
+      additionalProperties: true
+    AssetItem:
+      type: object
+      required: [type, url, width, height, prompt]
+      properties:
+        type:
+          type: string
+          enum: [hero, ig_post, og_card, ig_story]
+        url:
+          type: string
+          format: uri
+        width:
+          type: integer
+        height:
+          type: integer
+        prompt:
+          type: string
+    DecodeResponse:
+      type: object
+      required: [source_url, branding, copy, tokens]
+      properties:
+        source_url:
+          type: string
+          format: uri
+        branding:
+          $ref: '#/components/schemas/BrandingTokens'
+        copy:
+          $ref: '#/components/schemas/BrandCopy'
+        tokens:
+          type: object
+          description: Kimi token usage
+          additionalProperties: true
+    DesignResponse:
+      type: object
+      required: [design_md, strategy, tokens_total]
+      properties:
+        design_md:
+          type: string
+        strategy:
+          $ref: '#/components/schemas/Strategy'
+        tokens_total:
+          type: integer
+    HtmlResponse:
+      type: object
+      required: [html, outline, tokens_total]
+      properties:
+        html:
+          type: string
+        outline:
+          type: object
+          properties:
+            sections:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        tokens_total:
+          type: integer
+    AssetsResponse:
+      type: object
+      required: [assets, mocked]
+      properties:
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetItem'
+        mocked:
+          type: boolean
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        hint:
+          type: string
+        upstream_status:
+          type: integer
+        url:
+          type: string

@@ -1,0 +1,736 @@
+[
+  {
+    "updatedAt": "2026-04-26T00:23:30.742Z",
+    "createdAt": "2026-04-26T00:23:30.742Z",
+    "id": "brandapi00000000000000001",
+    "name": "Brand API (3 routes in one workflow)",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "id": "d1000000-0000-0000-0000-000000000001",
+        "name": "Decode webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          200,
+          200
+        ],
+        "webhookId": "brand-decode",
+        "parameters": {
+          "path": "brand/decode",
+          "httpMethod": "POST",
+          "responseMode": "responseNode"
+        }
+      },
+      {
+        "id": "d1000000-0000-0000-0000-000000000002",
+        "name": "Firecrawl: Scrape",
+        "type": "@mendable/n8n-nodes-firecrawl.firecrawl",
+        "typeVersion": 1,
+        "position": [
+          420,
+          200
+        ],
+        "credentials": {
+          "firecrawlApi": {
+            "id": "sSYPVCnmZHQc7jld",
+            "name": "Firecrawl account"
+          }
+        },
+        "parameters": {
+          "resource": "Scraping",
+          "operation": "scrape",
+          "useCustomBody": true,
+          "customBody": "={\n  \"url\": {{ JSON.stringify($json.body.url) }},\n  \"formats\": [\"markdown\", \"summary\", \"branding\"],\n  \"onlyMainContent\": true\n}"
+        }
+      },
+      {
+        "id": "d1000000-0000-0000-0000-000000000003",
+        "name": "Kimi: Copy",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          640,
+          200
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "kimi-header-auth-001",
+            "name": "Kimi K2.6 Header Auth"
+          }
+        },
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.moonshot.ai/v1/chat/completions",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"model\": \"kimi-k2-turbo-preview\",\n  \"response_format\": { \"type\": \"json_object\" },\n  \"messages\": [\n    {\"role\":\"system\",\"content\":\"You are a brand strategist. Return JSON: brand_name, tagline, hero_headline, hero_subheadline, primary_cta, three_bullets (3 strings), tone (3 adjectives). VALID JSON only.\"},\n    {\"role\":\"user\",\"content\": {{ JSON.stringify(\"URL: \" + $('Decode webhook').item.json.body.url + \"\\n\\nSummary:\\n\" + ($json.data.summary || \"\") + \"\\n\\nBranding:\\n\" + JSON.stringify($json.data.branding || {})) }}}\n  ]\n}",
+          "options": {
+            "timeout": 90000
+          }
+        }
+      },
+      {
+        "id": "d1000000-0000-0000-0000-000000000004",
+        "name": "Decode respond",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          860,
+          200
+        ],
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ JSON.stringify({ source_url: $('Decode webhook').item.json.body.url, branding: $('Firecrawl: Scrape').item.json.data.branding, copy: JSON.parse($json.choices[0].message.content), tokens: $json.usage }) }}"
+        }
+      },
+      {
+        "id": "d2000000-0000-0000-0000-000000000001",
+        "name": "Design webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          200,
+          440
+        ],
+        "webhookId": "brand-design",
+        "parameters": {
+          "path": "brand/design",
+          "httpMethod": "POST",
+          "responseMode": "responseNode"
+        }
+      },
+      {
+        "id": "d2000000-0000-0000-0000-000000000002",
+        "name": "Kimi: Strategy",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          420,
+          440
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "kimi-header-auth-001",
+            "name": "Kimi K2.6 Header Auth"
+          }
+        },
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.moonshot.ai/v1/chat/completions",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"model\": \"kimi-k2-turbo-preview\",\n  \"response_format\": { \"type\": \"json_object\" },\n  \"messages\": [\n    {\"role\":\"system\",\"content\":\"You are a senior brand strategist. Return JSON with: positioning_statement, target_audience, brand_archetype (one of: Hero, Outlaw, Magician, Innocent, Explorer, Sage, Lover, Jester, Caregiver, Creator, Ruler, Everyman), voice_examples (3 short sentences), mood_keywords (5 words), what_to_avoid (3 cliches), expansion_opportunities (3 product ideas). VALID JSON only.\"},\n    {\"role\":\"user\",\"content\": {{ JSON.stringify(\"Brand context:\\n\" + JSON.stringify($json.body)) }}}\n  ]\n}",
+          "options": {
+            "timeout": 60000
+          }
+        }
+      },
+      {
+        "id": "d2000000-0000-0000-0000-000000000003",
+        "name": "Stash strategy",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          640,
+          440
+        ],
+        "parameters": {
+          "mode": "manual",
+          "includeOtherFields": false,
+          "assignments": {
+            "assignments": [
+              {
+                "id": "s1",
+                "name": "strategy",
+                "type": "object",
+                "value": "={{ JSON.parse($json.choices[0].message.content) }}"
+              },
+              {
+                "id": "s2",
+                "name": "input",
+                "type": "object",
+                "value": "={{ $('Design webhook').item.json.body }}"
+              },
+              {
+                "id": "s3",
+                "name": "strategy_tokens",
+                "type": "number",
+                "value": "={{ $json.usage.total_tokens }}"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "d2000000-0000-0000-0000-000000000004",
+        "name": "Kimi: Design.md",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          860,
+          440
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "kimi-header-auth-001",
+            "name": "Kimi K2.6 Header Auth"
+          }
+        },
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.moonshot.ai/v1/chat/completions",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"model\": \"kimi-k2-turbo-preview\",\n  \"messages\": [\n    {\"role\":\"system\",\"content\":\"You are a senior brand designer writing a complete design system spec. Output markdown only. Sections: # {brand_name} Design System, ## At a glance, ## Voice & tone (3 adjectives + 2 example sentences + what to avoid), ## Color palette (markdown table), ## Typography (heading + body, scale), ## Spacing & layout, ## Components (button primary/secondary/card/input specs), ## Imagery & motion, ## Sample landing page outline (hero, 3 features, social proof, footer), ## Brand archetype & expansion, ## Code tokens (JSON code block). Use actual hex codes and font names. Be specific. Output ONLY the markdown.\"},\n    {\"role\":\"user\",\"content\": {{ JSON.stringify(\"Brand input:\\n\" + JSON.stringify($json.input) + \"\\n\\nStrategy:\\n\" + JSON.stringify($json.strategy)) }}}\n  ]\n}",
+          "options": {
+            "timeout": 120000
+          }
+        }
+      },
+      {
+        "id": "d2000000-0000-0000-0000-000000000005",
+        "name": "Design respond",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          1080,
+          440
+        ],
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ JSON.stringify({ design_md: $json.choices[0].message.content, strategy: $('Stash strategy').item.json.strategy, tokens_total: $('Stash strategy').item.json.strategy_tokens + $json.usage.total_tokens }) }}"
+        }
+      },
+      {
+        "id": "d3000000-0000-0000-0000-000000000001",
+        "name": "HTML webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          200,
+          680
+        ],
+        "webhookId": "brand-html",
+        "parameters": {
+          "path": "brand/html",
+          "httpMethod": "POST",
+          "responseMode": "responseNode"
+        }
+      },
+      {
+        "id": "d3000000-0000-0000-0000-000000000002",
+        "name": "Kimi: Outline",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          420,
+          680
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "kimi-header-auth-001",
+            "name": "Kimi K2.6 Header Auth"
+          }
+        },
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.moonshot.ai/v1/chat/completions",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"model\": \"kimi-k2-turbo-preview\",\n  \"response_format\": { \"type\": \"json_object\" },\n  \"messages\": [\n    {\"role\":\"system\",\"content\":\"Information architect. Given a design.md, return JSON with key \\\"sections\\\" = array of 8 objects { type: \\\"hero|features|social_proof|testimonial|pricing|faq|cta|footer\\\", heading, subheading, content, cta_text? }. Use the brand voice from the spec. VALID JSON only.\"},\n    {\"role\":\"user\",\"content\": {{ JSON.stringify(\"Design system spec:\\n\" + ($json.body.design_md || \"\")) }}}\n  ]\n}",
+          "options": {
+            "timeout": 60000
+          }
+        }
+      },
+      {
+        "id": "d3000000-0000-0000-0000-000000000003",
+        "name": "Stash outline",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          640,
+          680
+        ],
+        "parameters": {
+          "mode": "manual",
+          "includeOtherFields": false,
+          "assignments": {
+            "assignments": [
+              {
+                "id": "o1",
+                "name": "outline",
+                "type": "object",
+                "value": "={{ JSON.parse($json.choices[0].message.content) }}"
+              },
+              {
+                "id": "o2",
+                "name": "design_md",
+                "type": "string",
+                "value": "={{ $('HTML webhook').item.json.body.design_md }}"
+              },
+              {
+                "id": "o3",
+                "name": "outline_tokens",
+                "type": "number",
+                "value": "={{ $json.usage.total_tokens }}"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "d3000000-0000-0000-0000-000000000004",
+        "name": "Kimi: HTML",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          860,
+          680
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "kimi-header-auth-001",
+            "name": "Kimi K2.6 Header Auth"
+          }
+        },
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.moonshot.ai/v1/chat/completions",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"model\": \"kimi-k2-turbo-preview\",\n  \"messages\": [\n    {\"role\":\"system\",\"content\":\"Senior frontend engineer. Output a complete HTML5 file (one <!doctype html>, full <html>, <head>, <body>). Inline CSS in <style> in <head>. Match the design system exactly using the actual hex codes, fonts, button styles. Google Fonts via <link>. Implement ALL sections from the outline. Vanilla JS for FAQ accordion. Responsive (640/1024px breakpoints). Output ONLY the HTML, NO code fences.\"},\n    {\"role\":\"user\",\"content\": {{ JSON.stringify(\"Design spec:\\n\" + ($json.design_md || \"\") + \"\\n\\nSection outline:\\n\" + JSON.stringify($json.outline)) }}}\n  ]\n}",
+          "options": {
+            "timeout": 240000
+          }
+        }
+      },
+      {
+        "id": "d3000000-0000-0000-0000-000000000005",
+        "name": "HTML respond",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          1080,
+          680
+        ],
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ JSON.stringify({ html: $json.choices[0].message.content, outline: $('Stash outline').item.json.outline, tokens_total: $('Stash outline').item.json.outline_tokens + $json.usage.total_tokens }) }}"
+        }
+      },
+      {
+        "id": "d4000000-0000-0000-0000-000000000001",
+        "name": "Assets webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          200,
+          920
+        ],
+        "webhookId": "brand-assets",
+        "parameters": {
+          "path": "brand/assets",
+          "httpMethod": "POST",
+          "responseMode": "responseNode"
+        }
+      },
+      {
+        "id": "d4000000-0000-0000-0000-000000000002",
+        "name": "Build prompts",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          420,
+          920
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const body = $input.first().json.body || {};\nconst branding = body.branding || {};\nconst copy = body.copy || {};\nconst strategy = body.strategy || {};\nconst images = branding.images || {};\nconst colors = Array.isArray(branding.colors) ? branding.colors : Object.values(branding.colors || {});\nconst fontsList = Array.isArray(branding.fonts) ? branding.fonts.map((f) => typeof f === \"string\" ? f : f.family).filter(Boolean) : [];\nconst palette = colors.slice(0, 6).join(\", \") || \"brand colors\";\nconst fonts = fontsList.slice(0, 3).join(\", \") || \"\";\nconst brandName = copy.brand_name || branding.title || \"the brand\";\nconst tone = (copy.tone || []).join(\", \") || (strategy.mood_keywords || []).slice(0,3).join(\", \") || \"modern, confident\";\nconst headline = copy.hero_headline || copy.tagline || \"\";\nconst cta = copy.primary_cta || \"\";\nconst archetype = strategy.brand_archetype || \"\";\nconst designMd = String(body.design_md || \"\").slice(0, 2400);\nconst hasHttpLogo = new RegExp(\"^https?://\").test(images.logo || \"\");\nconst hasScreenshot = new RegExp(\"^data:image/(png|jpe?g|webp);base64,\").test(body.screenshot || \"\");\nconst imageUrls = [\n  hasHttpLogo ? images.logo : null,\n  hasScreenshot ? body.screenshot : null,\n  images.ogImage,\n].filter(Boolean);\n\nconst referenceRules = [\n  \"Reference priority is strict: 1) the logo/brand mark, 2) the homepage screenshot, 3) the OG image only as secondary inspiration.\",\n  \"The generated asset must visibly belong to the same brand system as the logo: match the mark geometry, color relationships, contrast, spacing, and level of polish.\",\n  \"Do not invent a different logo, mascot, app icon, or unrelated symbol. If a mark appears, it should be derived from the provided logo reference.\",\n  \"Use the homepage screenshot for layout density, surface treatment, typography feel, and real product context.\",\n  \"Use the OG image only for broad mood if it conflicts with the logo or homepage screenshot.\"\n].join(\" \");\n\nconst baseStyle = referenceRules + \" Brand: \" + brandName + \". Tone: \" + tone + \". \" + (archetype ? \"Archetype: \" + archetype + \". \" : \"\") + \"Palette: \" + palette + \". \" + (fonts ? \"Typography: \" + fonts + \". \" : \"\") + \"Headline: \" + headline + \". CTA: \" + cta + \". Crisp readable text is allowed only when it improves the asset. Design system context: \" + designMd;\n\nif (body.asset_prompt) {\n  return [{ json: {\n    type: body.asset_type || \"custom\",\n    image_size: body.image_size || \"landscape_16_9\",\n    image_urls: imageUrls,\n    prompt: body.asset_prompt + \"\n\nBrand context:\n\" + baseStyle,\n  }}];\n}\n\nreturn [\n  { json: { type: \"hero\", image_size: \"landscape_16_9\", image_urls: imageUrls, prompt: \"Hero marketing image for \" + brandName + \". \" + baseStyle + \" Concept: \" + (headline || \"the brand promise\") + \". High-end website hero visual.\" } },\n  { json: { type: \"ig_post\", image_size: \"square_hd\", image_urls: imageUrls, prompt: \"Instagram post for \" + brandName + \". \" + baseStyle + \" Square composition with one strong subject and short readable text treatment: \"\" + brandName + \"\". Premium.\" } },\n  { json: { type: \"og_card\", image_size: \"landscape_16_9\", image_urls: imageUrls, prompt: \"Open Graph social card for \" + brandName + \". \" + baseStyle + \" Wide branded card with readable title text: \"\" + (headline || brandName) + \"\"\" + (cta ? \" and small CTA text \"\" + cta + \"\"\" : \"\") + \".\" } },\n  { json: { type: \"ig_story\", image_size: \"portrait_16_9\", image_urls: imageUrls, prompt: \"Instagram story for \" + brandName + \". \" + baseStyle + \" Tall vertical branded composition with crisp readable text and safe space near top and bottom.\" } }\n];"
+        }
+      },
+      {
+        "id": "d4000000-0000-0000-0000-000000000003",
+        "name": "Fal: Generate",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          640,
+          920
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "={{ ($json.image_urls || []).length ? 'https://fal.run/openai/gpt-image-2/edit' : 'https://fal.run/openai/gpt-image-2' }}",
+          "authentication": "none",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Authorization",
+                "value": "={{ 'Key ' + $env.FAL_KEY }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ Object.assign({ prompt: $json.prompt, image_size: $json.image_size, quality: 'medium', num_images: 1, output_format: 'png' }, ($json.image_urls || []).length ? { image_urls: $json.image_urls } : {}) }}",
+          "options": {
+            "timeout": 90000
+          }
+        }
+      },
+      {
+        "id": "d4000000-0000-0000-0000-000000000004",
+        "name": "Shape asset",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          860,
+          920
+        ],
+        "parameters": {
+          "mode": "manual",
+          "includeOtherFields": false,
+          "assignments": {
+            "assignments": [
+              {
+                "id": "a1",
+                "name": "type",
+                "type": "string",
+                "value": "={{ $json.type || $('Build prompts').item.json.type }}"
+              },
+              {
+                "id": "a2",
+                "name": "url",
+                "type": "string",
+                "value": "={{ $json.images[0].url }}"
+              },
+              {
+                "id": "a3",
+                "name": "width",
+                "type": "number",
+                "value": "={{ $json.images[0].width || ({ square_hd: 1024, square: 512, portrait_4_3: 768, portrait_16_9: 576, landscape_4_3: 1024, landscape_16_9: 1024 }[$('Build prompts').item.json.image_size] || null) }}"
+              },
+              {
+                "id": "a4",
+                "name": "height",
+                "type": "number",
+                "value": "={{ $json.images[0].height || ({ square_hd: 1024, square: 512, portrait_4_3: 1024, portrait_16_9: 1024, landscape_4_3: 768, landscape_16_9: 576 }[$('Build prompts').item.json.image_size] || null) }}"
+              },
+              {
+                "id": "a5",
+                "name": "prompt",
+                "type": "string",
+                "value": "={{ $('Build prompts').item.json.prompt }}"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "d4000000-0000-0000-0000-000000000005",
+        "name": "Aggregate assets",
+        "type": "n8n-nodes-base.aggregate",
+        "typeVersion": 1,
+        "position": [
+          1080,
+          920
+        ],
+        "parameters": {
+          "aggregate": "aggregateAllItemData",
+          "destinationFieldName": "assets",
+          "options": {}
+        }
+      },
+      {
+        "id": "d4000000-0000-0000-0000-000000000006",
+        "name": "Assets respond",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          1300,
+          920
+        ],
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ JSON.stringify({ assets: $json.assets, mocked: false }) }}"
+        }
+      }
+    ],
+    "connections": {
+      "Decode webhook": {
+        "main": [
+          [
+            {
+              "node": "Firecrawl: Scrape",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Firecrawl: Scrape": {
+        "main": [
+          [
+            {
+              "node": "Kimi: Copy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Kimi: Copy": {
+        "main": [
+          [
+            {
+              "node": "Decode respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Design webhook": {
+        "main": [
+          [
+            {
+              "node": "Kimi: Strategy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Kimi: Strategy": {
+        "main": [
+          [
+            {
+              "node": "Stash strategy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stash strategy": {
+        "main": [
+          [
+            {
+              "node": "Kimi: Design.md",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Kimi: Design.md": {
+        "main": [
+          [
+            {
+              "node": "Design respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTML webhook": {
+        "main": [
+          [
+            {
+              "node": "Kimi: Outline",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Kimi: Outline": {
+        "main": [
+          [
+            {
+              "node": "Stash outline",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stash outline": {
+        "main": [
+          [
+            {
+              "node": "Kimi: HTML",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Kimi: HTML": {
+        "main": [
+          [
+            {
+              "node": "HTML respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Assets webhook": {
+        "main": [
+          [
+            {
+              "node": "Build prompts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build prompts": {
+        "main": [
+          [
+            {
+              "node": "Fal: Generate",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fal: Generate": {
+        "main": [
+          [
+            {
+              "node": "Shape asset",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Shape asset": {
+        "main": [
+          [
+            {
+              "node": "Aggregate assets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Aggregate assets": {
+        "main": [
+          [
+            {
+              "node": "Assets respond",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": null,
+    "pinData": null,
+    "versionId": "7136c6dc-4c6d-4e7d-aa5c-643628564e85",
+    "activeVersionId": "0e94e437-e5c6-4ebb-9856-7071cc3fb780",
+    "versionCounter": 13,
+    "triggerCount": 4,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-04-26T00:23:30.743Z",
+        "createdAt": "2026-04-26T00:23:30.743Z",
+        "role": "workflow:owner",
+        "workflowId": "brandapi00000000000000001",
+        "projectId": "fhYWuuvJIeruqAVv",
+        "project": {
+          "updatedAt": "2025-08-18T19:07:59.877Z",
+          "createdAt": "2025-08-18T19:06:31.698Z",
+          "id": "fhYWuuvJIeruqAVv",
+          "name": "Jonathan McWilliam <developers.digest.ai@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "8cd61474-38e8-4920-b50b-10f1dd6d6114"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]
