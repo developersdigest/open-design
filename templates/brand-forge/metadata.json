@@ -1,0 +1,45 @@
+{
+  "name": "Brand Forge: Use n8n as the Backend for an AI Brand Kit App",
+  "slug": "brand-forge-n8n-ai-brand-kit-backend",
+  "summary": "Turn one URL into brand context, a design system, landing page HTML, and marketing assets through four n8n webhook routes.",
+  "category": "AI",
+  "difficulty": "intermediate",
+  "estimatedSetupMinutes": 20,
+  "workflowFile": "workflow.json",
+  "webhookBasePath": "/webhook/brand",
+  "routes": [
+    "POST /decode",
+    "POST /design",
+    "POST /html",
+    "POST /assets"
+  ],
+  "requiredCredentials": [
+    {
+      "name": "Firecrawl account",
+      "type": "firecrawlApi",
+      "purpose": "Scrape the source URL and extract branding tokens."
+    },
+    {
+      "name": "Kimi K2.6 Header Auth",
+      "type": "httpHeaderAuth",
+      "purpose": "Generate brand copy, strategy, design.md, and landing page HTML."
+    },
+    {
+      "name": "Fal Header Auth",
+      "type": "httpHeaderAuth",
+      "purpose": "Generate hero, social, and Open Graph marketing images."
+    }
+  ],
+  "optionalCredentials": [
+    {
+      "name": "Postgres",
+      "type": "postgres",
+      "purpose": "Persist brand runs, design specs, landing pages, and asset packs."
+    }
+  ],
+  "companionApp": {
+    "path": "../../web",
+    "defaultUrl": "http://localhost:3000",
+    "env": ["KIMI_API_KEY", "N8N_BASE_URL"]
+  }
+}
