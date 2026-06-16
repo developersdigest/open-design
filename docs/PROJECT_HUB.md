@@ -1,6 +1,6 @@
 # n8n Project Hub
 
-Working hub for the sponsored n8n video and the Brand Forge demo app.
+Working hub for the sponsored n8n video and the Open Design demo app.
 
 ## Current commitment
 
@@ -15,7 +15,7 @@ Working hub for the sponsored n8n video and the Brand Forge demo app.
 
 Repo: `/Users/j/Documents/active-repos/n8n-demo`
 
-Demo name: **Brand Forge**
+Demo name: **Open Design**
 
 Concept: paste a URL and generate a BrandKit, design system, reusable CSS variables, marketing assets, and landing page from one self-hosted n8n workflow.
 
@@ -118,7 +118,7 @@ Structure:
 
 - Whether the publish target is May 7 or May 8. Email now says May 8; Linear currently has May 7.
 - Whether to submit an n8n template for the bonus.
-- Whether the video should stay Brand Forge-only or include a short "how to generalize this pattern" section.
+- Whether the video should stay Open Design-only or include a short "how to generalize this pattern" section.
 - Whether to polish the app before recording or keep the current surface and focus on the workflow.
 - Whether to update screenshots after the final run.
 

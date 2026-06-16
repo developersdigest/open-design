@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ----------------------------------------------------------------------------
-# smoke.sh — Brand Forge n8n webhook smoke test
+# smoke.sh — Open Design n8n webhook smoke test
 #
 # Hits each of the 4 brand webhooks in order and reports pass/fail with
 # latency for each step. Later steps reuse outputs from earlier steps, so
@@ -101,7 +101,7 @@ assert_jq() {
   return 0
 }
 
-echo "Brand Forge smoke test — base: $BASE_URL"
+echo "Open Design smoke test — base: $BASE_URL"
 echo
 
 # ---------- step 1: /decode ----------

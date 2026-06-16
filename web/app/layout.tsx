@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Brand Decoder",
-  description: "Scrape any URL → live design system + landing copy",
+  title: "Open Design",
+  description: "Turn any URL into a brand kit, design system, and marketing assets.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

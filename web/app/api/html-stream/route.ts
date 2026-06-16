@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { design_md = "", outline, model = "kimi-k2-turbo-preview" }: Body = await req.json();
+  const { design_md = "", outline, model = "kimi-k2.6" }: Body = await req.json();
 
   const hasOutline = !!(outline && Array.isArray(outline.sections) && outline.sections.length > 0);
   const systemPrompt = hasOutline ? SYSTEM_PROMPT_WITH_OUTLINE : SYSTEM_PROMPT_NO_OUTLINE;
@@ -57,6 +57,8 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify({
       model,
       stream: true,
+      temperature: 0.6,
+      thinking: { type: "disabled" },
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },

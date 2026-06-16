@@ -1,4 +1,4 @@
-# Brand Forge - Recording Guide
+# Open Design - Recording Guide
 
 Shot list for the n8n video. Faceless voiceover, screen-only. No face cam, no on-camera presence.
 

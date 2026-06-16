@@ -1,7 +1,7 @@
 services:
   n8n:
     image: n8nio/n8n:latest
-    container_name: brand-forge-n8n
+    container_name: open-design-n8n
     restart: unless-stopped
     ports:
       - "5678:5678"
@@ -23,7 +23,7 @@ services:
   web:
     build:
       context: ./web
-    container_name: brand-forge-web
+    container_name: open-design-web
     restart: unless-stopped
     ports:
       - "3000:3000"

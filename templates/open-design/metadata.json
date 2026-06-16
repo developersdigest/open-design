@@ -1,6 +1,6 @@
 {
-  "name": "Brand Forge: Use n8n as the Backend for an AI Brand Kit App",
-  "slug": "brand-forge-n8n-ai-brand-kit-backend",
+  "name": "Open Design: Use n8n as the Backend for an AI Brand Kit App",
+  "slug": "open-design-n8n-ai-brand-kit-backend",
   "summary": "Turn one URL into brand context, a design system, landing page HTML, and marketing assets through four n8n webhook routes.",
   "category": "AI",
   "difficulty": "intermediate",

@@ -1,4 +1,4 @@
-# Brand Forge — common dev tasks.
+# Open Design — common dev tasks.
 # Run `make` or `make help` to see what's here.
 
 .DEFAULT_GOAL := help

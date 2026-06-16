@@ -119,7 +119,7 @@ Takeaway:
 
 Build a real AI product where n8n is the backend, not just a background automation tool.
 
-The app is Brand Forge: paste a URL, then use one n8n workflow to decode the brand, create a BrandKit, generate marketing assets, and build a landing page.
+The app is Open Design: paste a URL, then use one n8n workflow to decode the brand, create a BrandKit, generate marketing assets, and build a landing page.
 
 The BrandKit is not just a written brand summary. It includes:
 
@@ -133,7 +133,7 @@ The BrandKit is not just a written brand summary. It includes:
 
 ### 0:00 - 0:45 - Cold open
 
-Show the finished Brand Forge app first.
+Show the finished Open Design app first.
 
 Voiceover point:
 

@@ -37,19 +37,32 @@ async function generateWithFal(body: any, requestId?: string) {
   const fontsList = Array.isArray(branding.fonts)
     ? branding.fonts.map((f: any) => typeof f === "string" ? f : f.family).filter(Boolean)
     : [];
-  const imageUrls = [
+  const selectedReferenceImages = normalizeReferenceImages(body.reference_images);
+  const automaticBrandImages = [
     /^https?:\/\//.test(images.logo || "") ? images.logo : null,
     /^data:image\/(png|jpe?g|webp);base64,/.test(body.screenshot || "") ? body.screenshot : null,
     images.ogImage,
-    ...normalizeReferenceImages(body.reference_images),
   ].filter(Boolean);
+  const isCustomPrompt = Boolean(body.asset_prompt);
+  const imageUrls = isCustomPrompt
+    ? [...automaticBrandImages, ...selectedReferenceImages]
+    : [...automaticBrandImages, ...selectedReferenceImages];
   const htmlContext = referenceHtmlContext(body.reference_html);
   const brandName = copy.brand_name || branding.title || "the brand";
   const prompt = [
-    body.asset_prompt || `Create one premium brand image for ${brandName}.`,
+    body.asset_prompt
+      ? [
+          "PRIMARY USER INSTRUCTION:",
+          body.asset_prompt,
+          "",
+          "Follow the primary instruction literally. Brand references are inspiration only: borrow palette, composition quality, spacing, material, typography feel, and polish. Do not copy the OG image, make the logo the subject, or replace the requested subject unless the user explicitly asks for that.",
+        ].join("\n")
+      : `Create one premium brand image for ${brandName}.`,
     "",
     "Brand context:",
-    "Reference priority: logo/brand mark first, homepage screenshot second, OG image only as secondary inspiration.",
+    isCustomPrompt
+      ? "Logo, homepage screenshot, OG image, and selected references are soft inspiration only. The user's requested subject, scene, and content win."
+      : "Reference priority: logo/brand mark first, homepage screenshot second, OG image only as secondary inspiration.",
     `Brand: ${brandName}.`,
     `Tone: ${(copy.tone || []).join(", ") || (strategy.mood_keywords || []).slice(0, 3).join(", ") || "modern, confident"}.`,
     `Palette: ${colors.slice(0, 6).join(", ") || "brand colors"}.`,

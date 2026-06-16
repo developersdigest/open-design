@@ -71,6 +71,11 @@ type PendingHtml = { id: string; prompt: string; createdAt: number };
 type ReferenceImage = { id: string; url: string; assetUrl?: string; name: string; source: "drop" | "asset" };
 type ReferenceHtml = { id: string; miniId: string; name: string; prompt: string; html: string };
 type CreateMode = "html" | "image";
+type GenerationLoadingContext = {
+  labels: string[];
+  colors: string[];
+  images: { url: string; label: string }[];
+};
 type GenerationContext = {
   referenceImages?: { url: string; asset_url?: string; name?: string }[];
   referenceHtml?: { name: string; prompt: string; html: string }[];
@@ -94,10 +99,33 @@ type Run = {
   assetCanvas?: Record<string, { x: number; y: number }>;
 };
 
-const HISTORY_KEY = "brand-forge-history";
+const HISTORY_KEY = "open-design-history";
 
 function brandRunId(decoded: Decoded) {
   return decoded.id || `local-${hostnameOf(decoded.source_url || "brand").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
+}
+
+function leanDecodedForDesign(decoded: Decoded): Decoded {
+  const branding = decoded.branding || {};
+  const images = branding.images || {};
+  return {
+    id: decoded.id,
+    source_url: decoded.source_url,
+    branding: {
+      ...branding,
+      images: {
+        favicon: keepHttpUrl(images.favicon),
+        logo: keepHttpUrl(images.logo),
+        ogImage: keepHttpUrl(images.ogImage),
+      },
+    },
+    copy: decoded.copy,
+    tokens: decoded.tokens,
+  };
+}
+
+function keepHttpUrl(value?: string) {
+  return /^https?:\/\//.test(value || "") ? value : undefined;
 }
 
 function normalizeRun(run: Run): Run {
@@ -270,7 +298,7 @@ export default function Page() {
       const r = await fetch("/api/design", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...run.decoded, id: runId, brand_run_id: runId }),
+        body: JSON.stringify({ ...leanDecodedForDesign(run.decoded), id: runId, brand_run_id: runId }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "design failed");
@@ -405,6 +433,7 @@ export default function Page() {
 
   // Workspace — a brand is open
   const active = history[activeIdx];
+  const brandReady = Boolean(active?.designed?.design_md && active?.indexCss && !designing);
 
   // Auto-fire design.md generation in the background once when a brand opens (if not already done)
   // (handled in BrandWorkspace via useEffect to avoid stale closure)
@@ -439,16 +468,6 @@ export default function Page() {
 
       {/* MAIN BRAND CONTENT */}
       <main className="flex-1 min-w-0 overflow-x-hidden">
-        {!libraryOpen && (
-          <button
-            type="button"
-            onClick={() => setLibraryOpen(true)}
-            aria-label="Open brands sidebar"
-            className="fixed left-4 top-4 z-30 h-9 w-9 rounded-full bg-ink text-white shadow-sm hover:bg-dark-gray"
-          >
-            ›
-          </button>
-        )}
         <div className="border-b-2 border-ink bg-white px-4 md:px-8 py-3 md:py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sticky top-0 z-10">
           <div className="min-w-0 flex items-center gap-3">
             {active?.decoded.branding?.images?.favicon ? (
@@ -473,19 +492,26 @@ export default function Page() {
             <div className="flex flex-wrap items-center gap-2 md:gap-3 pb-1 lg:pb-0">
               <div className="flex items-center gap-1 shrink-0">
                 {[
-                  { key: "brand"  as const, label: "Brand",  emoji: "◐", loading: designing },
-                  { key: "studio" as const, label: "Generate", emoji: "◇" },
+                  { key: "brand"  as const, label: "Brand",  emoji: "◐", loading: designing, disabled: false },
+                  { key: "studio" as const, label: "Generate", emoji: "◇", disabled: !brandReady },
                 ].map((t) => {
                   const isActive = tab === t.key;
                   return (
                     <button
                       key={t.key}
-                      onClick={() => setTab(t.key)}
+                      onClick={() => {
+                        if (t.disabled) return;
+                        setTab(t.key);
+                      }}
+                      disabled={t.disabled}
+                      title={t.disabled ? "Brand setup is still running" : undefined}
                       className={`relative px-3 md:px-4 py-2 text-bodysm font-medium border-2 border-ink rounded-pill transition-colors whitespace-nowrap ${
-                        isActive ? "bg-ink text-white" : "bg-cream hover:bg-white text-ink"
+                        t.disabled
+                          ? "cursor-not-allowed bg-offset text-dark-gray opacity-55"
+                          : isActive ? "bg-ink text-white" : "bg-cream hover:bg-white text-ink"
                       }`}
                     >
-                      <span className={`mr-2 ${isActive ? "text-white" : "text-dark-gray"}`}>{t.emoji}</span>
+                      <span className={`mr-2 ${isActive && !t.disabled ? "text-white" : "text-dark-gray"}`}>{t.emoji}</span>
                       {t.label}
                       {"loading" in t && t.loading && (
                         <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-pink dot-pulse align-middle" />
@@ -494,25 +520,6 @@ export default function Page() {
                   );
                 })}
               </div>
-              {history.length > 1 && (
-                <div className="hidden xl:flex max-w-sm items-center gap-1 overflow-x-auto pl-1">
-                  {history.slice(0, 6).map((run, i) => {
-                    const isActive = i === activeIdx;
-                    return (
-                      <button
-                        key={brandRunId(run.decoded) + i}
-                        onClick={() => selectBrand(i)}
-                        title={hostnameOf(run.decoded.source_url)}
-                        className={`h-8 max-w-28 truncate rounded-pill border-2 px-3 text-caption font-medium ${
-                          isActive ? "border-ink bg-ink text-white" : "border-transparent bg-cream text-ink hover:border-ink"
-                        }`}
-                      >
-                        {run.decoded.copy?.brand_name || hostnameOf(run.decoded.source_url)}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -547,18 +554,41 @@ export default function Page() {
   );
 }
 
+function Icon({ name, className = "h-4 w-4" }: { name: "copy" | "download" | "edit" | "trash" | "expand" | "context"; className?: string }) {
+  const paths: Record<string, React.ReactNode> = {
+    copy: (<><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></>),
+    download: (<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></>),
+    edit: (<><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></>),
+    trash: (<><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" /></>),
+    expand: (<><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /><line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" /></>),
+    context: (<><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></>),
+  };
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {paths[name]}
+    </svg>
+  );
+}
+
 function hostnameOf(u: string) {
   try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; }
 }
 
 const DECODE_STEPS = [
-  "Scraping the site",
-  "Extracting design tokens",
-  "Reading the brand voice",
-  "Picking the archetype",
-  "Composing copy",
-  "Almost there",
+  "Preparing the website",
+  "Reading the homepage",
+  "Finding the design system",
+  "Writing the brand kit",
+  "Building the page",
+  "Finishing up",
 ];
+
+const STEP_GLYPHS = ["◇", "✦", "◧", "▢", "◆", "●"];
+
+function faviconDataUrl(glyph: string): string {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23F4F4F0'/><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-size='52' fill='%23000'>${glyph}</text></svg>`;
+  return `data:image/svg+xml;utf8,${svg}`;
+}
 
 function DecodingLoader({ url }: { url: string }) {
   const [stepIdx, setStepIdx] = useState(0);
@@ -566,6 +596,29 @@ function DecodingLoader({ url }: { url: string }) {
     const id = setInterval(() => setStepIdx((i) => (i + 1) % DECODE_STEPS.length), 2400);
     return () => clearInterval(id);
   }, []);
+
+  // Alternate browser tab title + favicon through the steps so progress shows
+  // in the tab strip while the user is on another tab.
+  useEffect(() => {
+    const origTitle = document.title;
+    const link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
+    const origIconHref = link?.href ?? null;
+    return () => {
+      document.title = origTitle;
+      if (link && origIconHref) link.href = origIconHref;
+    };
+  }, []);
+
+  useEffect(() => {
+    document.title = `${DECODE_STEPS[stepIdx]}…`;
+    let link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.href = faviconDataUrl(STEP_GLYPHS[stepIdx % STEP_GLYPHS.length]);
+  }, [stepIdx]);
 
   const host = (() => {
     try { return new URL(/^https?:\/\//.test(url) ? url : `https://${url}`).hostname.replace(/^www\./, ""); }
@@ -590,7 +643,7 @@ function DecodingLoader({ url }: { url: string }) {
                     alt=""
                     className="w-12 h-12 rounded border-2 border-ink bg-white"
                   />
-                  {host} ◇ scrape ✦ tokens ◧ voice ▢ archetype
+                  Preparing {host}
                 </span>
               ))}
             </div>
@@ -619,8 +672,7 @@ function DecodingLoader({ url }: { url: string }) {
 }
 
 const PRESET_SITES = [
-  "stripe.com", "linear.app", "vercel.com", "supabase.com", "firecrawl.dev",
-  "anthropic.com", "openai.com", "notion.so",
+  "n8n.io", "stripe.com", "linear.app", "vercel.com",
 ];
 
 function Homepage({
@@ -657,15 +709,12 @@ function Homepage({
 
   return (
     <main className="min-h-screen px-5 py-8 md:px-10 md:py-12">
-      <section className="mx-auto flex min-h-[64dvh] max-w-6xl flex-col items-center justify-center text-center">
-        <h1 className="max-w-5xl text-[56px] leading-[0.94] font-bold sm:text-[76px] md:text-[104px]">
-          Turn any website into a brand engine.
+      <section className="mx-auto flex min-h-[calc(100dvh-3rem)] max-w-6xl flex-col items-center justify-center text-center">
+        <h1 className="max-w-5xl text-[64px] leading-[0.94] font-bold sm:text-[88px] md:text-[112px]">
+          Open Design
         </h1>
-        <p className="mx-auto mt-6 max-w-3xl text-bodyxl text-dark-gray">
-          Decode the voice, extract the design system, generate CSS variables, and spin up branded assets from one URL.
-        </p>
 
-        <div className="mt-10 w-full max-w-4xl">
+        <div className="mt-8 w-full max-w-4xl animate-fade-up delay-100">
           <form onSubmit={onSubmit} className="relative flex items-center rounded-[36px] border-[3px] border-ink bg-white p-2.5 shadow-[12px_12px_0_0_rgba(255,144,232,0.55)]">
             <input
               type="text"
@@ -691,7 +740,7 @@ function Homepage({
               )}
             </button>
           </form>
-          <div className="mx-auto mt-8 grid max-w-5xl grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="mx-auto mt-7 grid max-w-5xl grid-cols-2 gap-3 md:grid-cols-4">
             {PRESET_SITES.map((s) => (
               <button
                 key={s}
@@ -707,7 +756,8 @@ function Homepage({
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl border-t-2 border-ink pt-6">
+      {history.length > 0 && (
+      <section className="mx-auto mt-24 max-w-7xl border-t-2 border-ink pt-6">
           <div className="flex items-end justify-between gap-3 mb-5 flex-wrap">
             <div>
               <p className="text-caption uppercase tracking-widest text-dark-gray">Saved brands</p>
@@ -722,13 +772,7 @@ function Homepage({
             />
           </div>
 
-          {history.length === 0 ? (
-            <Card>
-              <p className="text-bodysm text-dark-gray">
-                Decode your first brand to fill this shelf. Pick one from the left or paste your own URL.
-              </p>
-            </Card>
-          ) : filtered.length === 0 ? (
+          {filtered.length === 0 ? (
             <Card>
               <p className="text-bodysm text-dark-gray">No brands match &quot;{search}&quot;.</p>
             </Card>
@@ -762,6 +806,7 @@ function Homepage({
             </>
           )}
       </section>
+      )}
     </main>
   );
 }
@@ -1042,14 +1087,87 @@ function useGoogleFontLink(href: string | null) {
   }, [href]);
 }
 
+function useStalledProgress(active: boolean, done: boolean, stallMs = 60000) {
+  const [visible, setVisible] = useState(active);
+  const [progress, setProgress] = useState(active ? 8 : 0);
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!active) return;
+    setVisible(true);
+    setProgress(8);
+    setElapsed(0);
+    const tickMs = 500;
+    const increment = (88 - 8) / (stallMs / tickMs);
+    const id = window.setInterval(() => {
+      setElapsed((value) => value + tickMs);
+      setProgress((value) => {
+        if (value >= 87.8) return 87.8;
+        return Math.min(88, Number((value + increment).toFixed(2)));
+      });
+    }, tickMs);
+    return () => window.clearInterval(id);
+  }, [active, stallMs]);
+
+  useEffect(() => {
+    if (!done || !visible) return;
+    setProgress(100);
+    const id = window.setTimeout(() => setVisible(false), 450);
+    return () => window.clearTimeout(id);
+  }, [done, visible]);
+
+  return { visible, progress, elapsed };
+}
+
+function ArtifactLoadingBar({ title, progress, elapsed }: { title: string; progress: number; elapsed: number }) {
+  const seconds = Math.max(0, Math.floor(elapsed / 1000));
+  const label = progress < 100
+    ? seconds >= 90
+      ? `still generating (${Math.floor(seconds / 60)}m ${seconds % 60}s)`
+      : `generating (${seconds}s)`
+    : "ready";
+
+  return (
+    <div className="rounded-card border-2 border-ink bg-white p-4">
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <p className="text-caption uppercase tracking-widest text-dark-gray">{title}</p>
+        <p className="text-caption text-dark-gray">{label}</p>
+      </div>
+      <div className="h-3 overflow-hidden rounded-pill border-2 border-ink bg-cream">
+        <div
+          className="h-full progress-fill transition-[width] duration-500 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function useCyclingLabel(active: boolean, labels: string[]) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!active || labels.length <= 1) return;
+    setIndex(0);
+    const id = window.setInterval(() => {
+      setIndex((value) => (value + 1) % labels.length);
+    }, 1400);
+    return () => window.clearInterval(id);
+  }, [active, labels.length]);
+
+  return labels[index] || labels[0] || "Preparing";
+}
+
 function Step1View({
   decoded,
   designed,
+  designPending,
   indexCss,
   indexCssPending,
 }: {
   decoded: Decoded;
   designed?: Designed;
+  designPending?: boolean;
   indexCss?: string;
   indexCssPending?: boolean;
 }) {
@@ -1070,6 +1188,8 @@ function Step1View({
   const primary = colors.primary || colorEntries[0]?.[1] || "#000000";
   const secondary = colors.secondary || colors.background || "#ffffff";
   const brandName = c.brand_name || hostnameOf(decoded.source_url);
+  const designProgress = useStalledProgress(Boolean(designPending && !designed?.design_md), Boolean(designed?.design_md));
+  const indexCssProgress = useStalledProgress(Boolean(indexCssPending && !indexCss), Boolean(indexCss));
 
   return (
     <section className="relative mx-auto min-h-[calc(100dvh-120px)] max-w-6xl px-4 py-10 md:px-8 md:py-14">
@@ -1155,36 +1275,72 @@ function Step1View({
       </div>
 
       <div className="mt-14 space-y-3 border-t-2 border-ink pt-5">
+        {designProgress.visible && (
+          <ArtifactLoadingBar title="design.md" progress={designProgress.progress} elapsed={designProgress.elapsed} />
+        )}
         {designed?.design_md && (
           <details>
-            <summary className="cursor-pointer text-caption uppercase tracking-widest text-dark-gray">design.md</summary>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => navigator.clipboard.writeText(designed.design_md)}
-                className="rounded-pill border-2 border-ink bg-white px-3 py-1 text-caption uppercase tracking-widest hover:bg-cream"
-              >
-                Copy
-              </button>
-              <button
-                type="button"
-                onClick={() => downloadText("design.md", designed.design_md, "text/markdown")}
-                className="rounded-pill border-2 border-ink bg-white px-3 py-1 text-caption uppercase tracking-widest hover:bg-cream"
-              >
-                Download
-              </button>
-            </div>
+            <summary className="flex cursor-pointer items-center justify-between gap-3 text-caption uppercase tracking-widest text-dark-gray">
+              <span>design.md</span>
+              <span className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); navigator.clipboard.writeText(designed.design_md); }}
+                  aria-label="Copy design.md"
+                  title="Copy"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white hover:bg-cream"
+                >
+                  <Icon name="copy" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); downloadText("design.md", designed.design_md, "text/markdown"); }}
+                  aria-label="Download design.md"
+                  title="Download"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white hover:bg-cream"
+                >
+                  <Icon name="download" />
+                </button>
+              </span>
+            </summary>
             <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded-card border-2 border-ink bg-white p-4 text-caption">{designed.design_md}</pre>
           </details>
         )}
+        {indexCssProgress.visible && (
+          <ArtifactLoadingBar title="index.css" progress={indexCssProgress.progress} elapsed={indexCssProgress.elapsed} />
+        )}
         <details>
-          <summary className="cursor-pointer text-caption uppercase tracking-widest text-dark-gray">
-            index.css {indexCss ? '(' + (indexCss.length / 1024).toFixed(1) + 'KB)' : indexCssPending ? "writing..." : "pending"}
+          <summary className="flex cursor-pointer items-center justify-between gap-3 text-caption uppercase tracking-widest text-dark-gray">
+            <span>
+              index.css {indexCss ? '(' + (indexCss.length / 1024).toFixed(1) + 'KB)' : indexCssPending ? "writing..." : "pending"}
+            </span>
+            {indexCss && (
+              <span className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); navigator.clipboard.writeText(indexCss); }}
+                  aria-label="Copy index.css"
+                  title="Copy"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white hover:bg-cream"
+                >
+                  <Icon name="copy" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); downloadText("index.css", indexCss, "text/css"); }}
+                  aria-label="Download index.css"
+                  title="Download"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white hover:bg-cream"
+                >
+                  <Icon name="download" />
+                </button>
+              </span>
+            )}
           </summary>
           {indexCss ? (
             <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded-card border-2 border-ink bg-white p-4 text-caption">{indexCss}</pre>
           ) : indexCssPending ? (
-            <div className="mt-3 h-20 rounded-card shimmer" />
+            <p className="mt-3 text-bodysm text-dark-gray">Writing index.css.</p>
           ) : (
             <p className="mt-3 text-bodysm text-dark-gray">Waiting on design.md.</p>
           )}
@@ -1213,10 +1369,14 @@ function BrandWorkspace({
   tab: "brand" | "studio";
 }) {
   const [indexCssPending, setIndexCssPending] = useState(false);
+  const designRequestedFor = useRef<string | null>(null);
 
   // Auto-fire design.md generation in the background once per brand open.
   useEffect(() => {
-    if (!run.designed && !designing) onGenDesign();
+    const runId = brandRunId(run.decoded);
+    if (run.designed || designing || designRequestedFor.current === runId) return;
+    designRequestedFor.current = runId;
+    onGenDesign();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandRunId(run.decoded)]);
 
@@ -1267,16 +1427,44 @@ function BrandWorkspace({
           designing={designing}
           generatingAssets={genAssets}
           onGenerateAssets={onGenAssets}
+          onUpdateRun={onUpdateRun}
         />
       )}
       {tab === "brand"  && (
         <Step1View
           decoded={run.decoded}
           designed={run.designed}
+          designPending={designing}
           indexCss={run.indexCss}
           indexCssPending={indexCssPending}
         />
       )}
+    </div>
+  );
+}
+
+function AssetGenerationCard({ labels }: { labels: string[] }) {
+  const progress = useStalledProgress(true, false);
+  const label = useCyclingLabel(true, labels);
+
+  return (
+    <div className="flex h-full min-h-[210px] flex-col justify-between rounded-card bg-white">
+      <div>
+        <p className="text-caption uppercase tracking-widest text-dark-gray">Generating image</p>
+        <p className="mt-3 text-large font-bold leading-tight">{label}</p>
+      </div>
+      <div>
+        <div className="mb-3 flex items-center justify-between text-caption text-dark-gray">
+          <span>Composing asset</span>
+          <span>{progress.progress}%</span>
+        </div>
+        <div className="h-3 overflow-hidden rounded-pill border-2 border-ink bg-cream">
+          <div
+            className="h-full progress-fill transition-[width] duration-500 ease-out"
+            style={{ width: `${progress.progress}%` }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -1316,6 +1504,15 @@ function AssetsTab({
     : allAssets;
   const canvasWidth = Math.max(1400, 520 + assets.length * 340);
   const canvasHeight = Math.max(860, 620 + Math.ceil(assets.length / 3) * 220);
+  const colorCount = Object.values(b.colors || {}).filter(Boolean).length;
+  const assetContextLabels = [
+    `Reading ${hostnameOf(run.decoded.source_url)}`,
+    b.images?.logo ? `Using ${brandName} logo` : `Finding ${brandName} identity`,
+    colorCount ? `Applying ${colorCount} colors` : "Applying brand colors",
+    run.designed?.design_md ? "Using design.md" : "Waiting for design.md",
+    run.indexCss ? "Using index.css" : "Preparing CSS",
+    imagePrompt.trim() ? "Shaping image prompt" : "Preparing image prompt",
+  ];
 
   function defaultPosition(index: number) {
     const col = index % 3;
@@ -1387,9 +1584,7 @@ function AssetsTab({
         <div className="h-full overflow-auto px-4 pb-32 pt-20 md:px-8">
           <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {generatingAssets && (
-              <div className="aspect-video rounded-card border-2 border-ink bg-white p-5">
-                <div className="h-full rounded bg-cream shimmer" />
-              </div>
+              <AssetGenerationCard labels={assetContextLabels} />
             )}
             {assets.map((asset) => (
               <div key={asset.url} className="group">
@@ -1463,7 +1658,7 @@ function AssetsTab({
         >
           {generatingAssets && (
             <div className="absolute rounded-card border-2 border-ink bg-white p-5" style={{ left: 420, top: 140, width: 420, height: 250 }}>
-              <div className="h-full rounded bg-cream shimmer" />
+              <AssetGenerationCard labels={assetContextLabels} />
             </div>
           )}
 
@@ -1565,11 +1760,13 @@ function StudioTab({
   designing,
   generatingAssets,
   onGenerateAssets,
+  onUpdateRun,
 }: {
   run: Run;
   designing: boolean;
   generatingAssets: boolean;
   onGenerateAssets: (prompt?: string, generationContext?: GenerationContext) => Promise<void> | void;
+  onUpdateRun: (patch: Partial<Run>) => void;
 }) {
   const [prompt, setPrompt] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -1587,6 +1784,28 @@ function StudioTab({
   const [referenceHtml, setReferenceHtml] = useState<ReferenceHtml[]>([]);
   const [copied, setCopied] = useState<null | "html" | "agent">(null);
   const visualAssets = run.assets?.assets || [];
+  const studioBrand = run.decoded.branding || {};
+  const studioCopy = run.decoded.copy || {};
+  const studioColors = Object.values(studioBrand.colors || {}).filter((value): value is string => Boolean(value)).slice(0, 6);
+  const studioImages = [
+    studioBrand.images?.logo ? { url: studioBrand.images.logo, label: "Logo" } : null,
+    studioBrand.images?.ogImage ? { url: studioBrand.images.ogImage, label: "OG image" } : null,
+    ...referenceImages.map((image) => ({ url: image.assetUrl || image.url, label: image.name })),
+  ].filter((image): image is { url: string; label: string } => Boolean(image)).slice(0, 5);
+  const generationLoadingContext: GenerationLoadingContext = {
+    labels: [
+      `Reading ${hostnameOf(run.decoded.source_url)}`,
+      studioBrand.images?.logo ? `Using ${studioCopy.brand_name || "brand"} logo` : `Finding ${studioCopy.brand_name || "brand"} identity`,
+      studioColors.length ? `Applying ${studioColors.length} brand colors` : "Applying brand colors",
+      run.designed?.design_md ? "Using design.md" : "Waiting for design.md",
+      run.indexCss ? "Using index.css" : "Preparing index.css",
+      referenceImages.length ? `Using ${referenceImages.length} image reference${referenceImages.length === 1 ? "" : "s"}` : "Checking image references",
+      referenceHtml.length ? `Using ${referenceHtml.length} HTML reference${referenceHtml.length === 1 ? "" : "s"}` : "Checking HTML references",
+      "Shaping image prompt",
+    ],
+    colors: studioColors,
+    images: studioImages,
+  };
   const creating = streaming;
   const promptLines = useMemo(() => splitPrompts(prompt), [prompt]);
   function flash(kind: "html" | "agent") {
@@ -1659,8 +1878,21 @@ function StudioTab({
   }
 
   function currentGenerationContext(): GenerationContext {
+    const b = run.decoded.branding || {};
+    const brandImages = [
+      b.images?.ogImage ? { url: b.images.ogImage, asset_url: b.images.ogImage, name: "Extracted OG image" } : null,
+      b.images?.logo ? { url: b.images.logo, asset_url: b.images.logo, name: "Extracted logo" } : null,
+      b.images?.favicon ? { url: b.images.favicon, asset_url: b.images.favicon, name: "Extracted favicon" } : null,
+    ].filter((image): image is { url: string; asset_url: string; name: string } => Boolean(image));
+    const selectedImages = referenceImages.map(({ url, assetUrl, name }) => ({ url, asset_url: assetUrl || url, name }));
+    const seen = new Set<string>();
+    const referenceImagePayload = [...brandImages, ...selectedImages].filter((image) => {
+      if (seen.has(image.url)) return false;
+      seen.add(image.url);
+      return true;
+    }).slice(0, 6);
     return {
-      referenceImages: referenceImages.map(({ url, assetUrl, name }) => ({ url, asset_url: assetUrl || url, name })),
+      referenceImages: referenceImagePayload,
       referenceHtml: referenceHtml.map(({ name, prompt, html }) => ({ name, prompt, html })),
     };
   }
@@ -1943,6 +2175,8 @@ function StudioTab({
           index_css: run.indexCss || "",
           tokens,
           assets,
+          reference_images: currentGenerationContext().referenceImages,
+          reference_html: currentGenerationContext().referenceHtml,
         }),
       });
       if (!res.ok || !res.body) {
@@ -2002,6 +2236,27 @@ function StudioTab({
 
   return (
     <div className="p-4 md:p-0 pb-4 md:pb-0">
+      {/* floating view-toggle, pinned to the right edge */}
+      <div className="fixed right-5 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-1 rounded-full border-2 border-ink bg-white p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
+        <button
+          type="button"
+          onClick={() => setStudioView("canvas")}
+          title="Canvas view"
+          aria-label="Studio canvas view"
+          className={`h-9 w-9 rounded-full text-body ${studioView === "canvas" ? "bg-ink text-white" : "text-ink hover:bg-cream"}`}
+        >
+          ◫
+        </button>
+        <button
+          type="button"
+          onClick={() => setStudioView("preview")}
+          title="Preview view"
+          aria-label="Studio preview view"
+          className={`h-9 w-9 rounded-full text-body ${studioView === "preview" ? "bg-ink text-white" : "text-ink hover:bg-cream"}`}
+        >
+          ▣
+        </button>
+      </div>
       {/* live stream — always-mounted iframe; hidden until first token arrives */}
       <iframe
         ref={livePreviewRef}
@@ -2017,30 +2272,29 @@ function StudioTab({
           pendingImages={pendingImages}
           pendingHtml={pendingHtml}
           indexCss={run.indexCss}
+          generationContext={generationLoadingContext}
           view={studioView}
           onExpand={setExpandedMini}
           onExpandAsset={setExpandedAsset}
-          onEditHtml={(mini) => editPrompt(mini.prompt, "html")}
+          onEditHtml={(mini) => {
+            addReferenceHtml(mini);
+            editPrompt(mini.prompt, "html");
+          }}
           onEditAsset={(asset) => editPrompt(asset.prompt || "", "image")}
           onUseAssetAsContext={(asset) => addReferenceImage({ url: asset.url, assetUrl: asset.url, name: asset.type === "custom" ? "Generated image" : asset.type, source: "asset" })}
           onUseHtmlAsContext={addReferenceHtml}
+          onDeleteAsset={(asset) => {
+            const nextAssets = visualAssets.filter((a) => a.url !== asset.url);
+            onUpdateRun({ assets: { ...(run.assets || {}), assets: nextAssets } });
+          }}
+          onDeleteHtml={(mini) => {
+            const nextMinis = (run.minis || []).filter((m) => m.id !== mini.id);
+            onUpdateRun({ minis: nextMinis });
+          }}
           onViewerChange={setViewer}
         />
       )}
 
-      {!streaming && (!run.minis || run.minis.length === 0) && visualAssets.length === 0 && (
-        <div className="flex min-h-[calc(100dvh-210px)] items-center justify-center px-4 pb-28">
-          <div className="max-w-sm text-center">
-            <p className="text-caption uppercase tracking-widest text-dark-gray">
-              {run.decoded.copy?.brand_name || hostnameOf(run.decoded.source_url)}
-            </p>
-            <h2 className="mt-3 text-display leading-none">Generate</h2>
-            <p className="mt-3 text-bodysm text-dark-gray">
-              Add one prompt, or stack prompts on separate lines.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* unified bottom dock: viewer toolbar + prompt input + suggestions */}
       <div className="relative z-20 mt-4 overflow-visible rounded-card border-2 border-ink bg-white md:fixed md:bottom-16 md:left-1/2 md:mt-0 md:w-[min(68rem,calc(100vw-3rem))] md:-translate-x-1/2 md:rounded-[34px] md:shadow-[0_16px_50px_rgba(0,0,0,0.12)]">
@@ -2155,7 +2409,7 @@ function StudioTab({
           </div>
         )}
         <div
-          className="px-3 pb-3 pt-2 safe-bottom"
+          className="px-5 py-2"
           onDragOver={(e) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = "copy";
@@ -2211,64 +2465,28 @@ function StudioTab({
               </button>
             </div>
           )}
-          <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="flex h-11 shrink-0 rounded-full bg-cream p-1">
-              <button
-                type="button"
-                onClick={() => setStudioView("canvas")}
-                title="Canvas view"
-                aria-label="Studio canvas view"
-                className={`h-9 w-9 rounded-full text-caption ${studioView === "canvas" ? "bg-ink text-white" : "text-ink hover:bg-white"}`}
-              >
-                ◫
-              </button>
-              <button
-                type="button"
-                onClick={() => setStudioView("preview")}
-                title="Preview view"
-                aria-label="Studio preview view"
-                className={`h-9 w-9 rounded-full text-caption ${studioView === "preview" ? "bg-ink text-white" : "text-ink hover:bg-white"}`}
-              >
-                ▣
-              </button>
-            </div>
-            <div className="relative shrink-0">
-              {modeFlyoutOpen && (
-                <div className="absolute bottom-full left-1/2 z-30 mb-3 flex -translate-x-1/2 gap-1 rounded-full border-2 border-ink bg-white p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.14)]">
-                  {[
-                    { key: "html" as const, icon: "▧", title: "HTML" },
-                    { key: "image" as const, icon: "◉", title: "Image" },
-                  ].map((mode) => (
-                    <button
-                      key={mode.key}
-                      type="button"
-                      title={mode.title}
-                      aria-label={mode.title}
-                      onClick={() => {
-                        setCreateMode(mode.key);
-                        setModeFlyoutOpen(false);
-                      }}
-                      className={`flex h-10 w-10 items-center justify-center rounded-full text-body hover:bg-cream ${
-                        createMode === mode.key ? "bg-ink text-white hover:bg-ink" : "text-ink"
-                      }`}
-                    >
-                      {mode.icon}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => setModeFlyoutOpen((open) => !open)}
-                title="Choose generation type"
-                aria-label="Choose generation type"
-                aria-expanded={modeFlyoutOpen}
-                className={`h-11 w-11 rounded-full border-2 border-ink text-large leading-none ${
-                  modeFlyoutOpen ? "bg-ink text-white" : "bg-white text-ink hover:bg-cream"
-                }`}
-              >
-                +
-              </button>
+          <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex h-11 shrink-0 items-center gap-1 rounded-full bg-cream p-1.5" role="tablist" aria-label="Generation type">
+              {[
+                { key: "html" as const, label: "HTML" },
+                { key: "image" as const, label: "Image" },
+              ].map((mode) => {
+                const isActive = createMode === mode.key;
+                return (
+                  <button
+                    key={mode.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setCreateMode(mode.key)}
+                    className={`flex h-8 items-center justify-center rounded-full px-4 text-caption font-medium transition ${
+                      isActive ? "bg-ink text-white" : "text-ink hover:bg-white"
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                );
+              })}
             </div>
             <textarea
               ref={promptInputRef}
@@ -2388,13 +2606,14 @@ function interleaveCanvasItems<T extends { sortKey: number }, U extends { sortKe
 }
 
 function GenerationsList({
-  minis, assets, pendingImages, pendingHtml, indexCss, view, onExpand, onExpandAsset, onEditHtml, onEditAsset, onUseAssetAsContext, onUseHtmlAsContext, onViewerChange,
+  minis, assets, pendingImages, pendingHtml, indexCss, generationContext, view, onExpand, onExpandAsset, onEditHtml, onEditAsset, onUseAssetAsContext, onUseHtmlAsContext, onDeleteAsset, onDeleteHtml, onViewerChange,
 }: {
   minis: MiniAsset[];
   assets: Asset[];
   pendingImages: PendingImage[];
   pendingHtml: PendingHtml[];
   indexCss?: string;
+  generationContext: GenerationLoadingContext;
   view: "canvas" | "preview";
   onExpand: (mini: MiniAsset) => void;
   onExpandAsset: (asset: Asset) => void;
@@ -2402,6 +2621,8 @@ function GenerationsList({
   onEditAsset: (asset: Asset) => void;
   onUseAssetAsContext: (asset: Asset) => void;
   onUseHtmlAsContext: (mini: MiniAsset) => void;
+  onDeleteAsset: (asset: Asset) => void;
+  onDeleteHtml: (mini: MiniAsset) => void;
   onViewerChange: (v: ViewerInfo | null) => void;
 }) {
   const [idx, setIdx] = useState(0);
@@ -2501,16 +2722,7 @@ function GenerationsList({
                   className="absolute overflow-hidden rounded-card border-2 border-ink bg-white shadow-[6px_6px_0_0_rgba(255,144,232,0.22)]"
                   style={{ left, top, width: tileWidth, height: tileHeight }}
                 >
-                  <div className="flex h-full flex-col justify-between bg-cream p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="h-3 w-20 rounded-full shimmer" />
-                      <span className="inline-block h-2 w-2 rounded-full bg-pink dot-pulse" />
-                    </div>
-                    <div className="space-y-3">
-                      <div className="h-16 rounded-card shimmer" />
-                      <p className="line-clamp-2 text-caption text-dark-gray">{item.pending.prompt}</p>
-                    </div>
-                  </div>
+                  <PendingImageCard pending={item.pending} context={generationContext} />
                 </div>
               );
             }
@@ -2531,33 +2743,62 @@ function GenerationsList({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={asset.url} alt={asset.type} className="h-full w-full object-contain bg-white" />
                   <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
-                  <div className="absolute bottom-3 right-3 z-20 flex translate-y-1 gap-2 opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100">
+                  <div className="absolute bottom-3 right-3 z-20 flex translate-y-1 gap-1 opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100">
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); onEditAsset(asset); }}
                       aria-label={`Edit ${asset.type} prompt`}
-                      className="rounded-full bg-white px-3 py-1 text-caption text-ink"
+                      title="Edit prompt"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-cream"
                     >
-                      Edit
+                      <Icon name="edit" />
                     </button>
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); onUseAssetAsContext(asset); }}
                       aria-label={`Use ${asset.type} as context`}
-                      className="rounded-full bg-white px-3 py-1 text-caption text-ink"
+                      title="Use as context"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-cream"
                     >
-                      Context
+                      <Icon name="context" />
                     </button>
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); onExpandAsset(asset); }}
                       aria-label={`Open ${asset.type} full screen`}
-                      className="rounded-full bg-white px-3 py-1 text-caption text-ink"
+                      title="Expand"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-cream"
                     >
-                      Expand
+                      <Icon name="expand" />
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(asset.prompt || asset.url); }} className="rounded-full bg-ink px-3 py-1 text-caption text-white">Copy</button>
-                    <a onClick={(e) => e.stopPropagation()} href={asset.url} download={assetFilename(asset)} className="rounded-full border-2 border-ink bg-white px-3 py-1 text-caption">Download</a>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(asset.prompt || asset.url); }}
+                      aria-label="Copy prompt"
+                      title="Copy prompt"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-white hover:bg-dark-gray"
+                    >
+                      <Icon name="copy" />
+                    </button>
+                    <a
+                      onClick={(e) => e.stopPropagation()}
+                      href={asset.url}
+                      download={assetFilename(asset)}
+                      aria-label="Download asset"
+                      title="Download"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-cream"
+                    >
+                      <Icon name="download" />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onDeleteAsset(asset); }}
+                      aria-label={`Delete ${asset.type}`}
+                      title="Delete"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-pink"
+                    >
+                      <Icon name="trash" />
+                    </button>
                   </div>
                 </div>
               );
@@ -2579,27 +2820,33 @@ function GenerationsList({
                   aria-label={`Open ${mini.prompt}`}
                 />
                 <HtmlTilePreview mini={mini} indexCss={indexCss} tileWidth={tileWidth} />
-                <div className="pointer-events-none absolute bottom-3 right-3 z-20 flex translate-y-1 gap-2 opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100">
+                <div className="pointer-events-none absolute bottom-3 right-3 z-20 flex translate-y-1 gap-1 opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100">
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onEditHtml(mini); }}
-                    className="pointer-events-auto rounded-full bg-white px-3 py-1 text-caption text-ink"
+                    aria-label="Edit prompt"
+                    title="Edit prompt"
+                    className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-cream"
                   >
-                    Edit
+                    <Icon name="edit" />
                   </button>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onUseHtmlAsContext(mini); }}
-                    className="pointer-events-auto rounded-full bg-white px-3 py-1 text-caption text-ink"
+                    aria-label="Use as context"
+                    title="Use as context"
+                    className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-cream"
                   >
-                    Context
+                    <Icon name="context" />
                   </button>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(mini.html); }}
-                    className="pointer-events-auto rounded-full bg-ink px-3 py-1 text-caption text-white"
+                    aria-label="Copy HTML"
+                    title="Copy HTML"
+                    className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-ink text-white hover:bg-dark-gray"
                   >
-                    Copy
+                    <Icon name="copy" />
                   </button>
                   <button
                     type="button"
@@ -2611,9 +2858,20 @@ function GenerationsList({
                       a.download = "generation.html";
                       a.click();
                     }}
-                    className="pointer-events-auto rounded-full border-2 border-ink bg-white px-3 py-1 text-caption"
+                    aria-label="Download HTML"
+                    title="Download"
+                    className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-cream"
                   >
-                    Download
+                    <Icon name="download" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onDeleteHtml(mini); }}
+                    aria-label="Delete generation"
+                    title="Delete"
+                    className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-pink"
+                  >
+                    <Icon name="trash" />
                   </button>
                 </div>
               </div>
@@ -2640,6 +2898,65 @@ function GenerationsList({
       className="w-full h-[calc(100dvh-300px)] md:h-[calc(100vh-256px)] bg-white block"
       title={current.mini.prompt}
     />
+  );
+}
+
+function PendingImageCard({ pending, context }: { pending: PendingImage; context: GenerationLoadingContext }) {
+  const progress = useStalledProgress(true, false);
+  const colorFocus = Math.floor(Date.now() / 1400) % Math.max(1, context.colors.length);
+  const colors = context.colors.length ? context.colors : ["#111111", "#666666", "#f4f1ec"];
+
+  return (
+    <div className="flex h-full min-h-0 flex-col justify-between overflow-hidden bg-cream p-3.5">
+      <div className="min-h-0">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-caption uppercase tracking-widest text-dark-gray">Generating image</p>
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-pink dot-pulse" />
+        </div>
+        <div className="mt-4 grid grid-cols-[minmax(0,1fr)_76px] items-center gap-3">
+          <div className="flex min-w-0 flex-col justify-center gap-2">
+            {colors.slice(0, 3).map((color, index) => (
+              <div key={`${color}-${index}`} className="flex items-center gap-2">
+                <span
+                  className={`h-6 w-6 shrink-0 rounded-full border-2 border-ink transition-transform duration-300 ${index === colorFocus ? "scale-110" : "scale-100"}`}
+                  style={{ background: color }}
+                  title={color}
+                />
+                <div className="h-2 flex-1 overflow-hidden rounded-pill bg-white">
+                  <div
+                    className={`h-full transition-[width] duration-500 ${index === colorFocus ? "w-full" : "w-1/3"}`}
+                    style={{ background: color }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col gap-2">
+            {context.images.slice(0, 2).map((image, index) => (
+              <span key={image.url} className={`overflow-hidden rounded-card border-2 border-ink bg-white ${index === 0 ? "h-8" : "h-11"}`} title={image.label}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={image.url} alt="" className="h-full w-full object-contain" />
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-2">
+        <div>
+          <div className="mb-1 flex items-center justify-between text-caption text-dark-gray">
+            <span>Composing</span>
+            <span>{Math.round(progress.progress)}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-pill border-2 border-ink bg-white">
+            <div
+              className="h-full progress-fill transition-[width] duration-500 ease-out"
+              style={{ width: `${progress.progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -22,8 +22,16 @@ The brand has an index.css ALREADY LOADED in the page. The full CSS is shown in 
 USING THE BRAND TOKENS
 The user message also contains BRAND TOKENS (exact hex colors, fonts) for reference. Don't invent colors.
 
+VISUAL ANCHORING RULES
+- Treat extracted brand evidence as the source of truth, in this order: attached visual references, og_url/brand images, index.css, design.md, tokens, then the user's prompt.
+- Before choosing layout, infer the brand's actual visual language from the references: density, whitespace, corner radius, border weight, shadows, illustration/photo style, color proportions, typography scale, and UI chrome.
+- The snippet should look like it came from the source site, not like a generic SaaS card recolored with brand colors.
+- Preserve brand-specific quirks when visible: unusual spacing, hard edges vs rounded corners, pill language, grid rhythm, gradients only if the source uses them, and image treatment.
+- Use the exact extracted palette and assets. Do not introduce generic blue/purple SaaS styling, stock gradients, fake dashboards, emoji, or unrelated placeholder art.
+- If the request is vague, build a polished brand-native composition rather than explaining or listing features.
+
 USING THE BRAND ASSETS
-The user message includes BRAND ASSETS (logo_url, favicon_url, og_url) when available. When the snippet would naturally include the brand mark (header, footer, hero, nav, mobile bar), use those <img> URLs directly. Don't invent placeholder logos. If no logo asset is provided, fall back to a brand-named text mark.
+The user message includes BRAND ASSETS when available. When the snippet would naturally include the brand mark (header, footer, hero, nav, mobile bar), use logo_url directly. Do not embed og_url in HTML snippets unless the user explicitly selected it as image context or specifically asks for that image. Don't invent placeholder logos. If no logo asset is provided, fall back to a brand-named text mark.
 
 USING SELECTED IMAGE ASSETS
 The user may attach SELECTED IMAGE ASSETS. These are not just inspiration: if the prompt asks for decoration, image cards, hero visuals, background images, mockups, billboards, previews, or media, use the provided asset URLs directly in <img src="..."> or CSS background-image:url("..."). Use object-fit/object-position and accessible alt text. Do not use unrelated placeholder image services.
@@ -92,7 +100,7 @@ export async function POST(req: NextRequest) {
   if (assets.favicon_url) assetLines.push(`favicon_url: ${assets.favicon_url}`);
   if (assets.og_url)      assetLines.push(`og_url:      ${assets.og_url}`);
   const assetsBlock = assetLines.length
-    ? "# BRAND ASSETS (use these URLs directly in <img> tags when the snippet needs the brand mark)\n" + assetLines.join("\n")
+    ? "# BRAND ASSETS (logo_url may be used for marks; og_url is only reference context unless explicitly selected)\n" + assetLines.join("\n")
     : "# BRAND ASSETS\n(none — use a text wordmark for the brand name)";
   const referenceHtmlBlock = referenceHtmlContextBlock(reference_html);
 
@@ -131,7 +139,7 @@ export async function POST(req: NextRequest) {
             userContent,
             "",
             "# VISUAL REFERENCES",
-            "Use the attached image references as visual context for layout, composition, assets, and style.",
+            "These images are the strongest evidence for the brand's actual look. Match their composition, color balance, spacing, image treatment, and UI material. Only embed images that were explicitly selected as image assets.",
             "",
             "# SELECTED IMAGE ASSETS",
             "These image URLs may be embedded directly in the HTML when useful. Use them for decorative images, backgrounds, cards, mockups, previews, or hero media if the prompt naturally calls for imagery.",
@@ -148,8 +156,10 @@ export async function POST(req: NextRequest) {
       Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify({
-      model: model || (refImages.length ? "kimi-k2.6" : "kimi-k2-turbo-preview"),
+      model: model || "kimi-k2.6",
       stream: true,
+      temperature: 0.6,
+      thinking: { type: "disabled" },
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: messageContent },

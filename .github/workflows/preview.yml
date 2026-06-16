@@ -1,4 +1,4 @@
-# Preview build smoke test for the Brand Forge demo.
+# Preview build smoke test for the Open Design demo.
 # Confirms the web app actually builds on every PR (beyond just typecheck in ci.yml).
 # The deploy step is currently a stub — replace with a real provider
 # (Vercel, Coolify, Fly, Cloudflare Pages) when ready to wire up live previews.

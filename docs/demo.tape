@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# demo.tape — VHS recording of the Brand Forge n8n smoke test pipeline.
+# demo.tape — VHS recording of the Open Design n8n smoke test pipeline.
 #
 # How to run:
 #   1. Install VHS:        brew install vhs

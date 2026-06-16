@@ -152,6 +152,16 @@ body {
   animation: brand-stripe 0.7s linear infinite;
 }
 
+.progress-fill {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--color-pink) 0 10px,
+    rgba(255, 144, 232, 0.68) 10px 20px
+  );
+  background-size: 28px 28px;
+  animation: brand-stripe 0.9s linear infinite;
+}
+
 @keyframes brand-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%      { opacity: 0.4; transform: scale(0.85); }

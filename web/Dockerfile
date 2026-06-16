@@ -1,4 +1,4 @@
-# Brand Forge web - Next.js 16 + Bun
+# Open Design web - Next.js 16 + Bun
 #
 # NOTE: next.config.ts does NOT set `output: "standalone"`, so this image
 # does not use the standalone runner. Instead the runner stage carries the

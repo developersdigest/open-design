@@ -1,4 +1,4 @@
-# Brand Forge n8n Template
+# Open Design n8n Template
 
 Use n8n as the backend for a small AI product. This template exposes four webhook routes that a Next.js app can call to decode a brand, write a design system, generate landing page HTML, and create marketing assets.
 
@@ -19,7 +19,7 @@ Use n8n as the backend for a small AI product. This template exposes four webhoo
 From the repo root:
 
 ```bash
-n8n import:workflow --input=templates/brand-forge/workflow.json
+n8n import:workflow --input=templates/open-design/workflow.json
 ```
 
 Then open n8n, verify the credentials, and activate the workflow.

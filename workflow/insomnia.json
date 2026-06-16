@@ -2,12 +2,12 @@
   "_type": "export",
   "__export_format": 4,
   "__export_date": "2026-04-29T12:00:41.000Z",
-  "__export_source": "n8n-demo-brand-forge",
+  "__export_source": "n8n-demo-open-design",
   "resources": [
     {
       "_id": "wrk_brand_forge",
       "_type": "workspace",
-      "name": "n8n Brand Forge",
+      "name": "n8n Open Design",
       "description": "Brand webhook demo",
       "scope": "collection",
       "parentId": null

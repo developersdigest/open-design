@@ -1,5 +1,5 @@
 /**
- * Hand-written TypeScript types for the Brand Forge n8n API.
+ * Hand-written TypeScript types for the Open Design n8n API.
  * Mirrors workflow/openapi.yaml (OpenAPI 3.1.0).
  */
 

@@ -1,6 +1,6 @@
 # Architecture
 
-Brand Forge is a Next.js 16 frontend wrapping a single n8n workflow with four webhook entry points. The frontend proxies requests to n8n; n8n orchestrates calls to Firecrawl, Moonshot (Kimi), and Fal.
+Open Design is a Next.js 16 frontend wrapping a single n8n workflow with four webhook entry points. The frontend proxies requests to n8n; n8n orchestrates calls to Firecrawl, Moonshot (Kimi), and Fal.
 
 ## System diagram
 

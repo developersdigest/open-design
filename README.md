@@ -1,8 +1,16 @@
-# Brand Forge — an n8n demo
+# Open Design — an n8n demo
 
 Turn any URL into a brand kit, design system, marketing assets, and a production-quality landing page - powered by a single self-hosted n8n workflow with a Next.js 16 frontend.
 
 Built to show off **n8n as a backend**: one workflow, four webhook routes, optional Neon Postgres persistence (schema in `db/`).
+
+### ▶ Watch the demo
+
+<a href="https://youtu.be/slKIDNp1bo4" title="Open Design — watch the demo on YouTube">
+  <img src="https://img.youtube.com/vi/slKIDNp1bo4/maxresdefault.jpg" alt="Open Design — watch the demo" width="100%">
+</a>
+
+> Full walkthrough: building an AI brand-kit app with n8n as the backend → **https://youtu.be/slKIDNp1bo4**
 
 ![the workflow canvas](docs/canvas.png)
 
@@ -12,16 +20,78 @@ Built to show off **n8n as a backend**: one workflow, four webhook routes, optio
 
 ## Quickstart
 
+Three pieces: **n8n** (with the workflow imported + credentials set), a tiny **`web/.env.local`**, and the **web app**.
+
 ```bash
-git clone <repo> && cd n8n-demo
-make import                          # imports the workflow into n8n
-cp web/.env.example web/.env.local   # add your KIMI key (FAL goes into n8n credentials)
-cd web && bun install && cd ..       # one-time
-make dev                             # n8n on :5678 + web on :3000
-make smoke                           # in another shell - verifies all 4 webhooks
+# 1. Pull it down
+git clone https://github.com/developersdigest/n8n-demo.git && cd n8n-demo
+
+# 2. Install the web app
+cd web && bun install && cd ..
+
+# 3. Tiny env file (just one key — see ".env is tiny" below)
+cp web/.env.example web/.env.local        # then add your KIMI_API_KEY
+
+# 4. Start n8n (:5678) + web (:3000) together
+make dev
 ```
 
-Need credentials or stuck? See [Run it locally](#run-it-locally) and [Troubleshooting](#troubleshooting) below. `make help` lists every target.
+Now **import the workflow** and **set the n8n credentials** ([Set up n8n](#set-up-n8n)), then verify end to end:
+
+```bash
+make smoke    # hits all 4 webhooks, prints pass/fail per step
+```
+
+`make help` lists every target.
+
+## Set up n8n
+
+The entire backend is **one workflow** — [`workflow/brand-api.json`](workflow/brand-api.json) — with 4 webhook routes on a single canvas. (An agent-node variant lives in [`workflow/brand-api-agent.json`](workflow/brand-api-agent.json).)
+
+### 1. Import the workflow
+
+**Option A — paste it in the n8n UI (easiest)**
+
+1. Open n8n → http://localhost:5678
+2. **Workflows → ⋯ → Import from File** and pick [`workflow/brand-api.json`](workflow/brand-api.json) — or open the file, copy all of it, and paste onto an empty canvas.
+3. Toggle the workflow **Active** (top-right).
+
+**Option B — CLI**
+
+```bash
+make import          # = n8n import:workflow --input=workflow/brand-api.json
+```
+
+### 2. Install the Firecrawl community node
+
+n8n UI → **Settings → Community Nodes → Install** → `@mendable/n8n-nodes-firecrawl`
+
+### 3. Add credentials (this is where your keys go)
+
+**Almost all secrets live in n8n, not in `.env`.** Create these credentials in the n8n UI (Credentials → New):
+
+| Credential | Type | Value |
+|---|---|---|
+| Firecrawl API | Firecrawl | your `fc-…` key |
+| Kimi K2.6 Header Auth | HTTP Header Auth | name `Authorization`, value `Bearer sk-…` (Moonshot key) |
+| Fal Header Auth | HTTP Header Auth | name `Authorization`, value `Key <FAL_KEY>` (literal `Key `, **not** `Bearer`) |
+| Postgres *(optional)* | Postgres | your Neon connection details — only if you wire up persistence |
+
+That's it. The workflow is now live at `http://localhost:5678/webhook/brand/{decode,design,html,assets}`.
+
+## .env is tiny
+
+The web app reads **one file — `web/.env.local`** — and it's almost empty, because the real config (Firecrawl / Moonshot / Fal / Neon) lives in **n8n credentials** above.
+
+| Variable | Required? | What it's for |
+|---|---|---|
+| `KIMI_API_KEY` | ✅ | Moonshot/Kimi key for the streamed UI snippets (`/api/mini-asset`, `/api/index-css`). Get one at [platform.moonshot.ai](https://platform.moonshot.ai/) |
+| `N8N_BASE_URL` | optional | Defaults to `http://localhost:5678/webhook/brand`. Only set it if n8n runs elsewhere (tunnel/remote host). |
+
+```bash
+cp web/.env.example web/.env.local
+# edit web/.env.local — set KIMI_API_KEY, leave the rest alone
+```
 
 ## What it does
 
@@ -36,7 +106,7 @@ A `/history` view is sketched out for showing past brand kits per mock user — 
 
 ## The whole thing is one n8n workflow
 
-`brandapi00000000000000001` — 22 nodes, 4 webhook entry points, all on one canvas:
+Four webhook entry points, all on one canvas:
 
 ```
 POST /webhook/brand/decode  →  Firecrawl → Kimi: Copy   → Save brand_run    → Decode respond
@@ -45,7 +115,7 @@ POST /webhook/brand/html    →  Kimi: Outline  → Stash → Kimi: HTML       �
 POST /webhook/brand/assets  →  Build prompts (4 items) → Fal: Generate → Shape → Aggregate → Assets respond
 ```
 
-That's the whole backend. No Express, no Hono — just n8n + Postgres.
+That's the whole backend. No Express, no Hono — just n8n (+ optional Postgres).
 
 ## Stack
 
@@ -63,9 +133,10 @@ That's the whole backend. No Express, no Hono — just n8n + Postgres.
 .
 ├── README.md
 ├── workflow/
-│   └── brand-api.json           # the n8n workflow export — import into your n8n
+│   ├── brand-api.json           # ← import this into n8n (4 webhook routes)
+│   └── brand-api-agent.json     # agent-node variant (LangChain agent + Moonshot chat model)
 ├── db/
-│   └── schema.sql               # Neon Postgres schema
+│   └── schema.sql               # Neon Postgres schema (optional persistence)
 ├── docs/
 │   ├── canvas.png               # screenshot of the workflow canvas
 │   └── app.png                  # screenshot of the running app
@@ -86,42 +157,33 @@ That's the whole backend. No Express, no Hono — just n8n + Postgres.
     └── package.json
 ```
 
-## Run it locally
+## Manual setup (without `make`)
 
 ```bash
 # 1. n8n
 brew install n8n            # or: npm i -g n8n
 n8n start                   # localhost:5678
+# → then do everything under "Set up n8n" above (import + community node + credentials)
 
-# 2. Install the Firecrawl community node in n8n UI:
-#    Settings → Community Nodes → Install
-#    @mendable/n8n-nodes-firecrawl
-
-# 3. Import the workflow
-n8n import:workflow --input=workflow/brand-api.json
-
-# 4. Create credentials in n8n UI:
-#    - Firecrawl API → your fc-... key
-#    - Kimi K2.6 Header Auth → HTTP Header Auth (name: Authorization, value: Bearer sk-...) with your Moonshot key
-#    - Fal Header Auth         → HTTP Header Auth (name: Authorization, value: Key <FAL_KEY>) with your Fal key
-#    - Postgres                → your Neon connection details
-
-# 5. Postgres schema
+# 2. Postgres schema (optional)
 psql "$DATABASE_URL" -f db/schema.sql
 
-# 6. Frontend
+# 3. Frontend
 cd web
 bun install
-cp .env.example .env.local  # then edit: KIMI_API_KEY is required, N8N_BASE_URL only if n8n isn't on localhost:5678
+cp .env.example .env.local  # set KIMI_API_KEY
 bun dev                     # localhost:3000
 ```
 
-> **Tip:** once everything is wired up, `make dev` from the repo root starts n8n + the web app together. `make help` lists the rest.
+> Once it's wired up, `make dev` from the repo root starts n8n + the web app together.
 
 ## Troubleshooting
 
+**`{"error":"couldn't reach n8n — is it running?"}`**
+n8n isn't up. Start it (`make n8n` or `n8n start`) and re-run.
+
 **`{"error":"empty response from n8n", "upstream_status": 404}`**
-The workflow isn't active or hasn't been imported. Re-run `make import` and toggle the "Active" switch in the n8n UI.
+The workflow isn't active or hasn't been imported. Import [`workflow/brand-api.json`](workflow/brand-api.json) and toggle **Active** in the n8n UI.
 
 **`{"error":"KIMI_API_KEY not set"}`**
 You haven't created `web/.env.local` yet — `cp web/.env.example web/.env.local` and fill in your Moonshot key.

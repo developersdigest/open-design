@@ -1,6 +1,6 @@
-# Contributing to Brand Forge
+# Contributing to Open Design
 
-Brand Forge is an n8n workflow plus a Next.js 16 web app. Keep changes small, keep the workflow JSON valid, and run `make typecheck` before opening a PR.
+Open Design is an n8n workflow plus a Next.js 16 web app. Keep changes small, keep the workflow JSON valid, and run `make typecheck` before opening a PR.
 
 ## Prereqs
 

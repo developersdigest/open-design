@@ -1,6 +1,6 @@
-# Brand Forge - Database
+# Open Design - Database
 
-Postgres schema for the Brand Forge n8n demo. Persistence is **opt-in** - the workflow in `workflow/brand-api.json` does not write to Postgres by default. Wire it up if you want a `/history` view.
+Postgres schema for the Open Design n8n demo. Persistence is **opt-in** - the workflow in `workflow/brand-api.json` does not write to Postgres by default. Wire it up if you want a `/history` view.
 
 ## Tables overview
 

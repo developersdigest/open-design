@@ -1,6 +1,6 @@
 # Roadmap
 
-This is the demo's roadmap. Items aren't promises - they're "if J or someone wants to extend it, here's what's next." Brand Forge ships as-is and works end to end; everything below is optional polish or scope expansion.
+This is the demo's roadmap. Items aren't promises - they're "if J or someone wants to extend it, here's what's next." Open Design ships as-is and works end to end; everything below is optional polish or scope expansion.
 
 ## Done
 

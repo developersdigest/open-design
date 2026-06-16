@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Brand Forge n8n API",
-    "description": "Postman collection for the Brand Forge n8n webhook endpoints.",
+    "name": "Open Design n8n API",
+    "description": "Postman collection for the Open Design n8n webhook endpoints.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [

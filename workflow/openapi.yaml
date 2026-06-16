@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Brand Forge n8n API
+  title: Open Design n8n API
   version: 0.1.0
   summary: n8n webhook API for decoding brands and generating design specs, landing HTML, and marketing assets.
 servers:
