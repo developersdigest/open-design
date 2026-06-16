@@ -14,8 +14,6 @@ Built to show off **n8n as a backend**: one workflow, four webhook routes, optio
 
 ![the workflow canvas](docs/canvas.png)
 
-![the app](docs/app.png)
-
 ---
 
 ## Quickstart
@@ -138,8 +136,7 @@ That's the whole backend. No Express, no Hono — just n8n (+ optional Postgres)
 ├── db/
 │   └── schema.sql               # Neon Postgres schema (optional persistence)
 ├── docs/
-│   ├── canvas.png               # screenshot of the workflow canvas
-│   └── app.png                  # screenshot of the running app
+│   └── canvas.png               # screenshot of the workflow canvas
 └── web/                         # Next.js app
     ├── app/
     │   ├── page.tsx             # 4-step UI
