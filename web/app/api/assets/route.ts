@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { proxyToN8n } from "@/lib/n8n";
 
 export const runtime = "nodejs";
@@ -16,7 +16,25 @@ export async function POST(req: NextRequest) {
   return generateWithFal(body, errorBody.request_id);
 }
 
-async function generateWithFal(body: any, requestId?: string) {
+interface AssetBody {
+  branding?: {
+    images?: Record<string, string | undefined>;
+    colors?: string[] | Record<string, string>;
+    fonts?: Array<string | { family?: string }>;
+    title?: string;
+  };
+  copy?: { brand_name?: string; tone?: string[]; hero_headline?: string };
+  strategy?: { mood_keywords?: string[] };
+  reference_images?: unknown;
+  reference_html?: unknown;
+  screenshot?: string;
+  asset_prompt?: string;
+  design_md?: unknown;
+  image_size?: string;
+  asset_type?: string;
+}
+
+async function generateWithFal(body: AssetBody, requestId?: string) {
   const key = process.env.FAL_KEY;
   if (!key) {
     return NextResponse.json(
@@ -35,7 +53,7 @@ async function generateWithFal(body: any, requestId?: string) {
   const strategy = body.strategy || {};
   const colors = Array.isArray(branding.colors) ? branding.colors : Object.values(branding.colors || {});
   const fontsList = Array.isArray(branding.fonts)
-    ? branding.fonts.map((f: any) => typeof f === "string" ? f : f.family).filter(Boolean)
+    ? branding.fonts.map((f) => (typeof f === "string" ? f : f.family)).filter(Boolean)
     : [];
   const selectedReferenceImages = normalizeReferenceImages(body.reference_images);
   const automaticBrandImages = [
@@ -70,9 +88,13 @@ async function generateWithFal(body: any, requestId?: string) {
     copy.hero_headline ? `Headline: ${copy.hero_headline}.` : "",
     body.design_md ? `Design system context: ${String(body.design_md).slice(0, 2400)}` : "",
     htmlContext,
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 
-  const endpoint = imageUrls.length ? "https://fal.run/openai/gpt-image-2/edit" : "https://fal.run/openai/gpt-image-2";
+  const endpoint = imageUrls.length
+    ? "https://fal.run/openai/gpt-image-2/edit"
+    : "https://fal.run/openai/gpt-image-2";
   const payload: Record<string, unknown> = {
     prompt,
     image_size: body.image_size || "landscape_16_9",
@@ -93,44 +115,63 @@ async function generateWithFal(body: any, requestId?: string) {
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
     return NextResponse.json(
-      { error: "Fal image generation failed", upstream_status: res.status, detail: json.detail || json.error || json, request_id: requestId },
+      {
+        error: "Fal image generation failed",
+        upstream_status: res.status,
+        detail: json.detail || json.error || json,
+        request_id: requestId,
+      },
       { status: 502 },
     );
   }
   const image = json.images?.[0];
   if (!image?.url) {
-    return NextResponse.json({ error: "Fal returned no image", detail: json, request_id: requestId }, { status: 502 });
+    return NextResponse.json(
+      { error: "Fal returned no image", detail: json, request_id: requestId },
+      { status: 502 },
+    );
   }
   return NextResponse.json({
-    assets: [{
-      type: body.asset_type || "custom",
-      url: image.url,
-      width: image.width || 1024,
-      height: image.height || 576,
-      prompt,
-    }],
+    assets: [
+      {
+        type: body.asset_type || "custom",
+        url: image.url,
+        width: image.width || 1024,
+        height: image.height || 576,
+        prompt,
+      },
+    ],
     mocked: false,
     fallback: "fal-direct",
   });
 }
 
-function normalizeReferenceImages(refs: any): string[] {
+function normalizeReferenceImages(refs: unknown): string[] {
   if (!Array.isArray(refs)) return [];
   return refs
     .slice(0, 6)
     .map((ref) => ref?.asset_url || ref?.url)
-    .filter((url): url is string => typeof url === "string" && (/^https?:\/\//.test(url) || /^data:image\/(png|jpe?g|webp);base64,/.test(url)));
+    .filter(
+      (url): url is string =>
+        typeof url === "string" &&
+        (/^https?:\/\//.test(url) || /^data:image\/(png|jpe?g|webp);base64,/.test(url)),
+    );
 }
 
-function referenceHtmlContext(refs: any): string {
+function referenceHtmlContext(refs: unknown): string {
   if (!Array.isArray(refs) || refs.length === 0) return "";
-  const blocks = refs.slice(0, 6).map((ref: any, index: number) => {
-    const name = typeof ref?.name === "string" ? ref.name.slice(0, 120) : `HTML reference ${index + 1}`;
-    const prompt = typeof ref?.prompt === "string" ? ref.prompt.slice(0, 400) : "";
-    const html = typeof ref?.html === "string" ? ref.html.slice(0, 1600) : "";
-    if (!html) return "";
-    return [`${index + 1}. ${name}`, prompt ? `Source prompt: ${prompt}` : "", `HTML/style cues: ${html}`].filter(Boolean).join("\n");
-  }).filter(Boolean);
+  const blocks = refs
+    .slice(0, 6)
+    .map((ref, index) => {
+      const name = typeof ref?.name === "string" ? ref.name.slice(0, 120) : `HTML reference ${index + 1}`;
+      const prompt = typeof ref?.prompt === "string" ? ref.prompt.slice(0, 400) : "";
+      const html = typeof ref?.html === "string" ? ref.html.slice(0, 1600) : "";
+      if (!html) return "";
+      return [`${index + 1}. ${name}`, prompt ? `Source prompt: ${prompt}` : "", `HTML/style cues: ${html}`]
+        .filter(Boolean)
+        .join("\n");
+    })
+    .filter(Boolean);
   if (!blocks.length) return "";
   return [
     "Selected HTML context:",

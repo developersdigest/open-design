@@ -54,7 +54,14 @@ type Outline = {
 
 type Built = { id?: string; html: string; outline?: Outline; tokens_total?: number };
 
-type Asset = { type: string; url: string; width: number; height: number; prompt?: string; createdAt?: number };
+type Asset = {
+  type: string;
+  url: string;
+  width: number;
+  height: number;
+  prompt?: string;
+  createdAt?: number;
+};
 type AssetPack = { id?: string; assets: Asset[]; mocked?: boolean };
 type AssetCanvas = {
   id: string;
@@ -102,7 +109,12 @@ type Run = {
 const HISTORY_KEY = "open-design-history";
 
 function brandRunId(decoded: Decoded) {
-  return decoded.id || `local-${hostnameOf(decoded.source_url || "brand").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
+  return (
+    decoded.id ||
+    `local-${hostnameOf(decoded.source_url || "brand")
+      .replace(/[^a-z0-9]+/gi, "-")
+      .toLowerCase()}`
+  );
 }
 
 function leanDecodedForDesign(decoded: Decoded): Decoded {
@@ -157,7 +169,10 @@ export default function Page() {
             const brandParam = params.get("brand");
             if (brandParam) {
               const i = arr.findIndex((r) => hostnameOf(r.decoded.source_url) === brandParam);
-              if (i >= 0) { setActiveIdx(i); return; }
+              if (i >= 0) {
+                setActiveIdx(i);
+                return;
+              }
             }
           }
         }
@@ -167,11 +182,16 @@ export default function Page() {
       reload();
       loaded.current = true;
     }
-    const onStorage = (e: StorageEvent) => { if (e.key === HISTORY_KEY) reload(); };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === HISTORY_KEY) reload();
+    };
     const onPop = () => {
       const params = new URLSearchParams(window.location.search);
       const brandParam = params.get("brand");
-      if (!brandParam) { setActiveIdx(null); return; }
+      if (!brandParam) {
+        setActiveIdx(null);
+        return;
+      }
       const i = history.findIndex((r) => hostnameOf(r.decoded.source_url) === brandParam);
       setActiveIdx(i >= 0 ? i : null);
     };
@@ -191,7 +211,8 @@ export default function Page() {
     if (activeIdx != null && history[activeIdx]) {
       const host = hostnameOf(history[activeIdx].decoded.source_url);
       const brandParam = params.get("brand");
-      const queryMatchesAnotherRun = brandParam &&
+      const queryMatchesAnotherRun =
+        brandParam &&
         brandParam !== host &&
         history.some((r) => hostnameOf(r.decoded.source_url) === brandParam);
       if (queryMatchesAnotherRun) return;
@@ -232,9 +253,7 @@ export default function Page() {
   }
 
   function updateRunById(runId: string, patch: Partial<Run>) {
-    const next = history.map((run) =>
-      brandRunId(run.decoded) === runId ? { ...run, ...patch } : run
-    );
+    const next = history.map((run) => (brandRunId(run.decoded) === runId ? { ...run, ...patch } : run));
     persist(next);
   }
 
@@ -347,26 +366,30 @@ export default function Page() {
         : j;
       const canvases = latestRun.assetCanvases?.length
         ? [{ ...latestRun.assetCanvases[0], name: "Canvas" }]
-        : [{
-            id: latestRun.activeCanvasId || "default",
-            name: "Canvas",
-            assetUrls: latestRun.assets?.assets?.map((asset) => asset.url) || [],
-            positions: latestRun.assetCanvas || {},
-          }];
+        : [
+            {
+              id: latestRun.activeCanvasId || "default",
+              name: "Canvas",
+              assetUrls: latestRun.assets?.assets?.map((asset) => asset.url) || [],
+              positions: latestRun.assetCanvas || {},
+            },
+          ];
       const activeCanvasId = canvases[0].id;
       const nextCanvases = canvases.map((canvas) =>
         canvas.id === activeCanvasId
           ? {
               ...canvas,
-              assetUrls: [
-                ...generatedAssets.map((asset) => asset.url),
-                ...(canvas.assetUrls || []),
-              ],
+              assetUrls: [...generatedAssets.map((asset) => asset.url), ...(canvas.assetUrls || [])],
             }
-          : canvas
+          : canvas,
       );
       if (latestIndex >= 0) {
-        latestAll[latestIndex] = { ...latestAll[latestIndex], assets: nextAssets, assetCanvases: nextCanvases, activeCanvasId };
+        latestAll[latestIndex] = {
+          ...latestAll[latestIndex],
+          assets: nextAssets,
+          assetCanvases: nextCanvases,
+          activeCanvasId,
+        };
         persist(latestAll);
       } else {
         updateActive({ assets: nextAssets, assetCanvases: nextCanvases, activeCanvasId });
@@ -461,7 +484,10 @@ export default function Page() {
             history={history}
             activeIdx={activeIdx}
             onSelect={selectBrand}
-            onHome={() => { setActiveIdx(null); setLibraryOpen(false); }}
+            onHome={() => {
+              setActiveIdx(null);
+              setLibraryOpen(false);
+            }}
           />
         </div>
       </aside>
@@ -492,7 +518,7 @@ export default function Page() {
             <div className="flex flex-wrap items-center gap-2 md:gap-3 pb-1 lg:pb-0">
               <div className="flex items-center gap-1 shrink-0">
                 {[
-                  { key: "brand"  as const, label: "Brand",  emoji: "◐", loading: designing, disabled: false },
+                  { key: "brand" as const, label: "Brand", emoji: "◐", loading: designing, disabled: false },
                   { key: "studio" as const, label: "Generate", emoji: "◇", disabled: !brandReady },
                 ].map((t) => {
                   const isActive = tab === t.key;
@@ -508,10 +534,14 @@ export default function Page() {
                       className={`relative px-3 md:px-4 py-2 text-bodysm font-medium border-2 border-ink rounded-pill transition-colors whitespace-nowrap ${
                         t.disabled
                           ? "cursor-not-allowed bg-offset text-dark-gray opacity-55"
-                          : isActive ? "bg-ink text-white" : "bg-cream hover:bg-white text-ink"
+                          : isActive
+                            ? "bg-ink text-white"
+                            : "bg-cream hover:bg-white text-ink"
                       }`}
                     >
-                      <span className={`mr-2 ${isActive && !t.disabled ? "text-white" : "text-dark-gray"}`}>{t.emoji}</span>
+                      <span className={`mr-2 ${isActive && !t.disabled ? "text-white" : "text-dark-gray"}`}>
+                        {t.emoji}
+                      </span>
                       {t.label}
                       {"loading" in t && t.loading && (
                         <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-pink dot-pulse align-middle" />
@@ -527,7 +557,9 @@ export default function Page() {
         <div className={tab === "studio" ? "" : "p-4 md:p-8"}>
           {error && tab === "brand" && (
             <Card className="mb-6">
-              <p className="text-body"><b>Error:</b> {error}</p>
+              <p className="text-body">
+                <b>Error:</b> {error}
+              </p>
             </Card>
           )}
           {active && (
@@ -554,24 +586,79 @@ export default function Page() {
   );
 }
 
-function Icon({ name, className = "h-4 w-4" }: { name: "copy" | "download" | "edit" | "trash" | "expand" | "context"; className?: string }) {
+function Icon({
+  name,
+  className = "h-4 w-4",
+}: {
+  name: "copy" | "download" | "edit" | "trash" | "expand" | "context";
+  className?: string;
+}) {
   const paths: Record<string, React.ReactNode> = {
-    copy: (<><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></>),
-    download: (<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></>),
-    edit: (<><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></>),
-    trash: (<><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" /></>),
-    expand: (<><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /><line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" /></>),
-    context: (<><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></>),
+    copy: (
+      <>
+        <rect x="9" y="9" width="13" height="13" rx="2" />
+        <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+      </>
+    ),
+    download: (
+      <>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
+      </>
+    ),
+    edit: (
+      <>
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+      </>
+    ),
+    trash: (
+      <>
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+        <path d="M10 11v6M14 11v6" />
+        <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+      </>
+    ),
+    expand: (
+      <>
+        <polyline points="15 3 21 3 21 9" />
+        <polyline points="9 21 3 21 3 15" />
+        <line x1="21" y1="3" x2="14" y2="10" />
+        <line x1="3" y1="21" x2="10" y2="14" />
+      </>
+    ),
+    context: (
+      <>
+        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+        <polyline points="2 17 12 22 22 17" />
+        <polyline points="2 12 12 17 22 12" />
+      </>
+    ),
   };
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       {paths[name]}
     </svg>
   );
 }
 
 function hostnameOf(u: string) {
-  try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; }
+  try {
+    return new URL(u).hostname.replace(/^www\./, "");
+  } catch {
+    return u;
+  }
 }
 
 const DECODE_STEPS = [
@@ -621,8 +708,11 @@ function DecodingLoader({ url }: { url: string }) {
   }, [stepIdx]);
 
   const host = (() => {
-    try { return new URL(/^https?:\/\//.test(url) ? url : `https://${url}`).hostname.replace(/^www\./, ""); }
-    catch { return url; }
+    try {
+      return new URL(/^https?:\/\//.test(url) ? url : `https://${url}`).hostname.replace(/^www\./, "");
+    } catch {
+      return url;
+    }
   })();
 
   return (
@@ -671,12 +761,17 @@ function DecodingLoader({ url }: { url: string }) {
   );
 }
 
-const PRESET_SITES = [
-  "n8n.io", "stripe.com", "linear.app", "vercel.com",
-];
+const PRESET_SITES = ["n8n.io", "stripe.com", "linear.app", "vercel.com"];
 
 function Homepage({
-  url, setUrl, decoding, onSubmit, history, onSelect, onDelete, error,
+  url,
+  setUrl,
+  decoding,
+  onSubmit,
+  history,
+  onSelect,
+  onDelete,
+  error,
 }: {
   url: string;
   setUrl: (s: string) => void;
@@ -705,7 +800,9 @@ function Homepage({
   const safePage = Math.min(page, pageCount - 1);
   const visible = filtered.slice(safePage * PER_PAGE, safePage * PER_PAGE + PER_PAGE);
   // reset to page 0 if search narrows results below current page
-  useEffect(() => { if (page > pageCount - 1) setPage(0); }, [pageCount, page]);
+  useEffect(() => {
+    if (page > pageCount - 1) setPage(0);
+  }, [pageCount, page]);
 
   return (
     <main className="min-h-screen px-5 py-8 md:px-10 md:py-12">
@@ -715,7 +812,10 @@ function Homepage({
         </h1>
 
         <div className="mt-8 w-full max-w-4xl animate-fade-up delay-100">
-          <form onSubmit={onSubmit} className="relative flex items-center rounded-[36px] border-[3px] border-ink bg-white p-2.5 shadow-[12px_12px_0_0_rgba(255,144,232,0.55)]">
+          <form
+            onSubmit={onSubmit}
+            className="relative flex items-center rounded-[36px] border-[3px] border-ink bg-white p-2.5 shadow-[12px_12px_0_0_rgba(255,144,232,0.55)]"
+          >
             <input
               type="text"
               required
@@ -733,7 +833,16 @@ function Homepage({
               {decoding ? (
                 <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M5 12h14" />
                   <path d="m12 5 7 7-7 7" />
                 </svg>
@@ -744,7 +853,9 @@ function Homepage({
             {PRESET_SITES.map((s) => (
               <button
                 key={s}
-                onClick={() => { setUrl(s); }}
+                onClick={() => {
+                  setUrl(s);
+                }}
                 disabled={decoding}
                 className="min-h-16 rounded-card bg-white px-5 py-4 text-body font-medium shadow-sm transition-colors hover:bg-pink/25 disabled:opacity-50"
               >
@@ -752,12 +863,16 @@ function Homepage({
               </button>
             ))}
           </div>
-          {error && <p className="mt-4 text-bodysm"><b>Error:</b> {error}</p>}
+          {error && (
+            <p className="mt-4 text-bodysm">
+              <b>Error:</b> {error}
+            </p>
+          )}
         </div>
       </section>
 
       {history.length > 0 && (
-      <section className="mx-auto mt-24 max-w-7xl border-t-2 border-ink pt-6">
+        <section className="mx-auto mt-24 max-w-7xl border-t-2 border-ink pt-6">
           <div className="flex items-end justify-between gap-3 mb-5 flex-wrap">
             <div>
               <p className="text-caption uppercase tracking-widest text-dark-gray">Saved brands</p>
@@ -786,26 +901,33 @@ function Homepage({
               {pageCount > 1 && (
                 <div className="mt-6 flex items-center justify-between">
                   <p className="text-caption text-dark-gray">
-                    Showing {safePage * PER_PAGE + 1}–{safePage * PER_PAGE + visible.length} of {filtered.length}
+                    Showing {safePage * PER_PAGE + 1}–{safePage * PER_PAGE + visible.length} of{" "}
+                    {filtered.length}
                   </p>
                   <div className="flex gap-2 items-center text-caption text-dark-gray">
                     <button
                       onClick={() => setPage((p) => Math.max(0, p - 1))}
                       disabled={safePage === 0}
                       className="px-3 py-1 bg-white border-2 border-ink rounded-pill disabled:opacity-30"
-                    >‹ Prev</button>
-                    <span>{safePage + 1} / {pageCount}</span>
+                    >
+                      ‹ Prev
+                    </button>
+                    <span>
+                      {safePage + 1} / {pageCount}
+                    </span>
                     <button
                       onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
                       disabled={safePage >= pageCount - 1}
                       className="px-3 py-1 bg-white border-2 border-ink rounded-pill disabled:opacity-30"
-                    >Next ›</button>
+                    >
+                      Next ›
+                    </button>
                   </div>
                 </div>
               )}
             </>
           )}
-      </section>
+        </section>
       )}
     </main>
   );
@@ -839,84 +961,126 @@ function BrandCard({ run, onClick, onDelete }: { run: Run; onClick: () => void; 
             aria-label={confirming ? "Confirm delete" : "Delete brand"}
             title={confirming ? "Click again to confirm" : "Delete brand"}
             className={`w-7 h-7 flex items-center justify-center border-2 border-ink rounded-full transition-colors ${
-              confirming ? "bg-pink text-ink" : "bg-white text-ink opacity-0 group-hover:opacity-100 hover:bg-pink/30"
+              confirming
+                ? "bg-pink text-ink"
+                : "bg-white text-ink opacity-0 group-hover:opacity-100 hover:bg-pink/30"
             }`}
           >
             {confirming ? (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
             ) : (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             )}
           </button>
           {confirming && (
-            <span className="text-caption bg-white border-2 border-ink rounded-pill px-2 py-0.5 whitespace-nowrap">click again to confirm</span>
+            <span className="text-caption bg-white border-2 border-ink rounded-pill px-2 py-0.5 whitespace-nowrap">
+              click again to confirm
+            </span>
           )}
         </div>
       )}
       <button onClick={onClick} className="text-left w-full h-full relative block">
         <div className="absolute top-2 left-2 right-[-8px] bottom-[-8px] rounded-card bg-offset -z-10 group-hover:bg-pink/30 transition-colors" />
         <div className="relative bg-white border-2 border-ink rounded-card overflow-hidden h-full flex flex-col">
-        {og ? (
-          <div className="h-32 relative bg-offset overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={og} alt="" className="w-full h-full object-cover" />
-            <div className="absolute bottom-2 left-2 flex gap-1.5">
-              {[c.branding?.colors?.primary, c.branding?.colors?.secondary, c.branding?.colors?.accent]
-                .filter(Boolean)
-                .map((hex, i) => (
-                  <div key={i} className="w-5 h-5 rounded border-2 border-ink" style={{ background: hex }} />
-                ))}
+          {og ? (
+            <div className="h-32 relative bg-offset overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={og} alt="" className="w-full h-full object-cover" />
+              <div className="absolute bottom-2 left-2 flex gap-1.5">
+                {[c.branding?.colors?.primary, c.branding?.colors?.secondary, c.branding?.colors?.accent]
+                  .filter(Boolean)
+                  .map((hex, i) => (
+                    <div
+                      key={i}
+                      className="w-5 h-5 rounded border-2 border-ink"
+                      style={{ background: hex }}
+                    />
+                  ))}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="h-32 relative" style={{ background: bg }}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              {c.branding?.images?.logo ? (
+          ) : (
+            <div className="h-32 relative" style={{ background: bg }}>
+              <div className="absolute inset-0 flex items-center justify-center">
+                {c.branding?.images?.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.branding.images.logo} alt="" className="max-h-12 max-w-[60%]" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full" style={{ background: primary }} />
+                )}
+              </div>
+              <div className="absolute bottom-2 left-2 flex gap-1.5">
+                {[c.branding?.colors?.primary, c.branding?.colors?.secondary, c.branding?.colors?.accent]
+                  .filter(Boolean)
+                  .map((hex, i) => (
+                    <div
+                      key={i}
+                      className="w-5 h-5 rounded border-2 border-ink"
+                      style={{ background: hex }}
+                    />
+                  ))}
+              </div>
+            </div>
+          )}
+          <div className="p-4 border-t-2 border-ink flex-1 flex flex-col">
+            <div className="flex items-center gap-2 mb-1">
+              {favicon && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={c.branding.images.logo} alt="" className="max-h-12 max-w-[60%]" />
+                <img src={favicon} alt="" className="w-4 h-4 rounded shrink-0" />
+              )}
+              <p className="text-bodysm font-bold truncate">
+                {c.copy?.brand_name || hostnameOf(c.source_url)}
+              </p>
+            </div>
+            <p className="text-caption text-dark-gray truncate">{hostnameOf(c.source_url)}</p>
+            {c.copy?.tagline && (
+              <p className="text-caption text-dark-gray mt-2 line-clamp-2">{c.copy.tagline}</p>
+            )}
+            <div className="mt-auto pt-3 flex flex-wrap gap-1">
+              {counts.length === 0 ? (
+                <span className="text-caption text-dark-gray italic">decoded only</span>
               ) : (
-                <div className="w-12 h-12 rounded-full" style={{ background: primary }} />
+                counts.map((c, i) => (
+                  <span key={i} className="text-caption bg-cream border border-ink rounded-pill px-2 py-0.5">
+                    {c}
+                  </span>
+                ))
               )}
             </div>
-            <div className="absolute bottom-2 left-2 flex gap-1.5">
-              {[c.branding?.colors?.primary, c.branding?.colors?.secondary, c.branding?.colors?.accent]
-                .filter(Boolean)
-                .map((hex, i) => (
-                  <div key={i} className="w-5 h-5 rounded border-2 border-ink" style={{ background: hex }} />
-                ))}
-            </div>
-          </div>
-        )}
-        <div className="p-4 border-t-2 border-ink flex-1 flex flex-col">
-          <div className="flex items-center gap-2 mb-1">
-            {favicon && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={favicon} alt="" className="w-4 h-4 rounded shrink-0" />
-            )}
-            <p className="text-bodysm font-bold truncate">{c.copy?.brand_name || hostnameOf(c.source_url)}</p>
-          </div>
-          <p className="text-caption text-dark-gray truncate">{hostnameOf(c.source_url)}</p>
-          {c.copy?.tagline && (
-            <p className="text-caption text-dark-gray mt-2 line-clamp-2">{c.copy.tagline}</p>
-          )}
-          <div className="mt-auto pt-3 flex flex-wrap gap-1">
-            {counts.length === 0 ? (
-              <span className="text-caption text-dark-gray italic">decoded only</span>
-            ) : (
-              counts.map((c, i) => (
-                <span key={i} className="text-caption bg-cream border border-ink rounded-pill px-2 py-0.5">{c}</span>
-              ))
-            )}
           </div>
         </div>
-      </div>
       </button>
     </div>
   );
 }
 
 function BrandSidebar({
-  history, activeIdx, onSelect, onHome,
+  history,
+  activeIdx,
+  onSelect,
+  onHome,
 }: {
   history: Run[];
   activeIdx: number;
@@ -937,45 +1101,43 @@ function BrandSidebar({
           Library ({history.length})
         </p>
         <div>
-        {history.map((run, i) => {
-          const c = run.decoded;
-          const primary = c.branding?.colors?.primary || "#000";
-          const favicon = c.branding?.images?.favicon;
-          const isActive = i === activeIdx;
-          const counts = [
-            run.minis?.length ? `${run.minis.length}` : null,
-          ].filter(Boolean);
-          return (
-            <button
-              key={i}
-              onClick={() => onSelect(i)}
-              className={`w-full shrink-0 text-left px-3 py-2.5 rounded-xl mb-1 transition-colors flex items-center gap-3 min-h-[44px] ${
-                isActive ? "bg-pink/30 border-2 border-ink" : "hover:bg-offset border-2 border-transparent"
-              }`}
-            >
-              {favicon ? (
-                <div className="w-8 h-8 rounded border-2 border-ink shrink-0 bg-white flex items-center justify-center overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={favicon} alt="" className="w-5 h-5 object-contain" />
+          {history.map((run, i) => {
+            const c = run.decoded;
+            const primary = c.branding?.colors?.primary || "#000";
+            const favicon = c.branding?.images?.favicon;
+            const isActive = i === activeIdx;
+            const counts = [run.minis?.length ? `${run.minis.length}` : null].filter(Boolean);
+            return (
+              <button
+                key={i}
+                onClick={() => onSelect(i)}
+                className={`w-full shrink-0 text-left px-3 py-2.5 rounded-xl mb-1 transition-colors flex items-center gap-3 min-h-[44px] ${
+                  isActive ? "bg-pink/30 border-2 border-ink" : "hover:bg-offset border-2 border-transparent"
+                }`}
+              >
+                {favicon ? (
+                  <div className="w-8 h-8 rounded border-2 border-ink shrink-0 bg-white flex items-center justify-center overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={favicon} alt="" className="w-5 h-5 object-contain" />
+                  </div>
+                ) : (
+                  <div
+                    className="w-8 h-8 rounded border-2 border-ink shrink-0"
+                    style={{ background: primary }}
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-bodysm font-medium truncate">
+                    {c.copy?.brand_name || hostnameOf(c.source_url)}
+                  </p>
+                  <p className="text-caption text-dark-gray truncate">{hostnameOf(c.source_url)}</p>
                 </div>
-              ) : (
-                <div
-                  className="w-8 h-8 rounded border-2 border-ink shrink-0"
-                  style={{ background: primary }}
-                />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="text-bodysm font-medium truncate">
-                  {c.copy?.brand_name || hostnameOf(c.source_url)}
-                </p>
-                <p className="text-caption text-dark-gray truncate">{hostnameOf(c.source_url)}</p>
-              </div>
-              {counts.length > 0 && (
-                <p className="text-caption text-dark-gray font-mono shrink-0">◇{counts.join("·")}</p>
-              )}
-            </button>
-          );
-        })}
+                {counts.length > 0 && (
+                  <p className="text-caption text-dark-gray font-mono shrink-0">◇{counts.join("·")}</p>
+                )}
+              </button>
+            );
+          })}
         </div>
       </nav>
     </aside>
@@ -986,11 +1148,23 @@ function ActionRow({ children }: { children: React.ReactNode }) {
   return <div className="my-6 flex flex-wrap items-center gap-3">{children}</div>;
 }
 
-function Card({ children, featured = false, className = "" }: { children: React.ReactNode; featured?: boolean; className?: string }) {
+function Card({
+  children,
+  featured = false,
+  className = "",
+}: {
+  children: React.ReactNode;
+  featured?: boolean;
+  className?: string;
+}) {
   return (
     <div className={`relative ${className}`}>
-      <div className={`absolute top-2 left-2 right-[-8px] bottom-[-8px] rounded-card -z-10 ${featured ? "bg-pink/30" : "bg-offset"}`} />
-      <div className="relative bg-white border-2 border-ink rounded-card p-6 h-full flex flex-col">{children}</div>
+      <div
+        className={`absolute top-2 left-2 right-[-8px] bottom-[-8px] rounded-card -z-10 ${featured ? "bg-pink/30" : "bg-offset"}`}
+      />
+      <div className="relative bg-white border-2 border-ink rounded-card p-6 h-full flex flex-col">
+        {children}
+      </div>
     </div>
   );
 }
@@ -1022,20 +1196,50 @@ const FONT_SUBSTITUTES: Record<string, string> = {
 // Known Google Fonts families we can safely <link> without 404
 const GOOGLE_FONTS = new Set(
   [
-    "Inter", "Manrope", "DM Sans", "Geist", "Geist Mono", "Roboto", "Open Sans",
-    "Lato", "Poppins", "Montserrat", "Source Sans 3", "Work Sans", "Nunito",
-    "Plus Jakarta Sans", "Space Grotesk", "Outfit", "Figtree", "Albert Sans",
-    "Public Sans", "IBM Plex Sans", "IBM Plex Mono", "JetBrains Mono",
-    "DM Serif Display", "Source Serif 4", "Playfair Display", "Lora", "Merriweather",
-  ].map((s) => s.toLowerCase())
+    "Inter",
+    "Manrope",
+    "DM Sans",
+    "Geist",
+    "Geist Mono",
+    "Roboto",
+    "Open Sans",
+    "Lato",
+    "Poppins",
+    "Montserrat",
+    "Source Sans 3",
+    "Work Sans",
+    "Nunito",
+    "Plus Jakarta Sans",
+    "Space Grotesk",
+    "Outfit",
+    "Figtree",
+    "Albert Sans",
+    "Public Sans",
+    "IBM Plex Sans",
+    "IBM Plex Mono",
+    "JetBrains Mono",
+    "DM Serif Display",
+    "Source Serif 4",
+    "Playfair Display",
+    "Lora",
+    "Merriweather",
+  ].map((s) => s.toLowerCase()),
 );
 
 function pickGoogleFont(raw: string | undefined): string | null {
   if (!raw) return null;
   // Take the first family name from "Foo, Bar, sans-serif"
-  const first = raw.split(",")[0].trim().replace(/^["']|["']$/g, "").toLowerCase();
+  const first = raw
+    .split(",")[0]
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .toLowerCase();
   if (FONT_SUBSTITUTES[first]) return FONT_SUBSTITUTES[first];
-  if (GOOGLE_FONTS.has(first)) return raw.split(",")[0].trim().replace(/^["']|["']$/g, "");
+  if (GOOGLE_FONTS.has(first))
+    return raw
+      .split(",")[0]
+      .trim()
+      .replace(/^["']|["']$/g, "");
   return null;
 }
 
@@ -1119,13 +1323,22 @@ function useStalledProgress(active: boolean, done: boolean, stallMs = 60000) {
   return { visible, progress, elapsed };
 }
 
-function ArtifactLoadingBar({ title, progress, elapsed }: { title: string; progress: number; elapsed: number }) {
+function ArtifactLoadingBar({
+  title,
+  progress,
+  elapsed,
+}: {
+  title: string;
+  progress: number;
+  elapsed: number;
+}) {
   const seconds = Math.max(0, Math.floor(elapsed / 1000));
-  const label = progress < 100
-    ? seconds >= 90
-      ? `still generating (${Math.floor(seconds / 60)}m ${seconds % 60}s)`
-      : `generating (${seconds}s)`
-    : "ready";
+  const label =
+    progress < 100
+      ? seconds >= 90
+        ? `still generating (${Math.floor(seconds / 60)}m ${seconds % 60}s)`
+        : `generating (${seconds}s)`
+      : "ready";
 
   return (
     <div className="rounded-card border-2 border-ink bg-white p-4">
@@ -1184,11 +1397,16 @@ function Step1View({
   const bodyFont = '"' + bodyFontName + '", system-ui, sans-serif';
   useGoogleFontLink(googleFontsHref([headingFontName, bodyFontName]));
 
-  const colorEntries = Object.entries(colors).filter(([, value]) => Boolean(value)).slice(0, 6);
+  const colorEntries = Object.entries(colors)
+    .filter(([, value]) => Boolean(value))
+    .slice(0, 6);
   const primary = colors.primary || colorEntries[0]?.[1] || "#000000";
   const secondary = colors.secondary || colors.background || "#ffffff";
   const brandName = c.brand_name || hostnameOf(decoded.source_url);
-  const designProgress = useStalledProgress(Boolean(designPending && !designed?.design_md), Boolean(designed?.design_md));
+  const designProgress = useStalledProgress(
+    Boolean(designPending && !designed?.design_md),
+    Boolean(designed?.design_md),
+  );
   const indexCssProgress = useStalledProgress(Boolean(indexCssPending && !indexCss), Boolean(indexCss));
 
   return (
@@ -1198,7 +1416,11 @@ function Step1View({
           <div className="mb-8 flex items-center gap-4">
             {b.images?.favicon ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={b.images.favicon} alt="" className="h-10 w-10 rounded border-2 border-ink bg-white p-1" />
+              <img
+                src={b.images.favicon}
+                alt=""
+                className="h-10 w-10 rounded border-2 border-ink bg-white p-1"
+              />
             ) : (
               <div className="h-10 w-10 rounded border-2 border-ink" style={{ background: primary }} />
             )}
@@ -1209,12 +1431,18 @@ function Step1View({
           </div>
 
           {c.hero_headline && (
-            <h1 className="max-w-4xl text-h2 font-bold leading-[1.02] md:text-h1" style={{ fontFamily: headingFont }}>
+            <h1
+              className="max-w-4xl text-h2 font-bold leading-[1.02] md:text-h1"
+              style={{ fontFamily: headingFont }}
+            >
               {c.hero_headline}
             </h1>
           )}
           {c.hero_subheadline && (
-            <p className="mt-5 max-w-3xl text-bodyxl leading-relaxed text-dark-gray" style={{ fontFamily: bodyFont }}>
+            <p
+              className="mt-5 max-w-3xl text-bodyxl leading-relaxed text-dark-gray"
+              style={{ fontFamily: bodyFont }}
+            >
               {c.hero_subheadline}
             </p>
           )}
@@ -1222,7 +1450,9 @@ function Step1View({
           {c.three_bullets?.length ? (
             <div className="mt-8 flex max-w-4xl flex-col gap-3 border-y-2 border-ink py-5 md:flex-row md:gap-6">
               {c.three_bullets.slice(0, 3).map((bullet) => (
-                <p key={bullet} className="flex-1 text-bodysm leading-snug text-dark-gray">{bullet}</p>
+                <p key={bullet} className="flex-1 text-bodysm leading-snug text-dark-gray">
+                  {bullet}
+                </p>
               ))}
             </div>
           ) : null}
@@ -1240,7 +1470,12 @@ function Step1View({
             <p className="mb-2 text-caption uppercase tracking-widest text-dark-gray">Palette</p>
             <div className="flex flex-wrap gap-2">
               {colorEntries.map(([name, value]) => (
-                <div key={name} title={name + ' ' + value} className="h-9 w-9 rounded-full border-2 border-ink" style={{ background: value }} />
+                <div
+                  key={name}
+                  title={name + " " + value}
+                  className="h-9 w-9 rounded-full border-2 border-ink"
+                  style={{ background: value }}
+                />
               ))}
             </div>
           </div>
@@ -1276,7 +1511,11 @@ function Step1View({
 
       <div className="mt-14 space-y-3 border-t-2 border-ink pt-5">
         {designProgress.visible && (
-          <ArtifactLoadingBar title="design.md" progress={designProgress.progress} elapsed={designProgress.elapsed} />
+          <ArtifactLoadingBar
+            title="design.md"
+            progress={designProgress.progress}
+            elapsed={designProgress.elapsed}
+          />
         )}
         {designed?.design_md && (
           <details>
@@ -1285,7 +1524,10 @@ function Step1View({
               <span className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={(e) => { e.preventDefault(); navigator.clipboard.writeText(designed.design_md); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigator.clipboard.writeText(designed.design_md);
+                  }}
                   aria-label="Copy design.md"
                   title="Copy"
                   className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white hover:bg-cream"
@@ -1294,7 +1536,10 @@ function Step1View({
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => { e.preventDefault(); downloadText("design.md", designed.design_md, "text/markdown"); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    downloadText("design.md", designed.design_md, "text/markdown");
+                  }}
                   aria-label="Download design.md"
                   title="Download"
                   className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white hover:bg-cream"
@@ -1303,22 +1548,36 @@ function Step1View({
                 </button>
               </span>
             </summary>
-            <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded-card border-2 border-ink bg-white p-4 text-caption">{designed.design_md}</pre>
+            <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded-card border-2 border-ink bg-white p-4 text-caption">
+              {designed.design_md}
+            </pre>
           </details>
         )}
         {indexCssProgress.visible && (
-          <ArtifactLoadingBar title="index.css" progress={indexCssProgress.progress} elapsed={indexCssProgress.elapsed} />
+          <ArtifactLoadingBar
+            title="index.css"
+            progress={indexCssProgress.progress}
+            elapsed={indexCssProgress.elapsed}
+          />
         )}
         <details>
           <summary className="flex cursor-pointer items-center justify-between gap-3 text-caption uppercase tracking-widest text-dark-gray">
             <span>
-              index.css {indexCss ? '(' + (indexCss.length / 1024).toFixed(1) + 'KB)' : indexCssPending ? "writing..." : "pending"}
+              index.css{" "}
+              {indexCss
+                ? "(" + (indexCss.length / 1024).toFixed(1) + "KB)"
+                : indexCssPending
+                  ? "writing..."
+                  : "pending"}
             </span>
             {indexCss && (
               <span className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={(e) => { e.preventDefault(); navigator.clipboard.writeText(indexCss); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigator.clipboard.writeText(indexCss);
+                  }}
                   aria-label="Copy index.css"
                   title="Copy"
                   className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white hover:bg-cream"
@@ -1327,7 +1586,10 @@ function Step1View({
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => { e.preventDefault(); downloadText("index.css", indexCss, "text/css"); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    downloadText("index.css", indexCss, "text/css");
+                  }}
                   aria-label="Download index.css"
                   title="Download"
                   className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white hover:bg-cream"
@@ -1338,7 +1600,9 @@ function Step1View({
             )}
           </summary>
           {indexCss ? (
-            <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded-card border-2 border-ink bg-white p-4 text-caption">{indexCss}</pre>
+            <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded-card border-2 border-ink bg-white p-4 text-caption">
+              {indexCss}
+            </pre>
           ) : indexCssPending ? (
             <p className="mt-3 text-bodysm text-dark-gray">Writing index.css.</p>
           ) : (
@@ -1358,7 +1622,13 @@ function Step1View({
 }
 
 function BrandWorkspace({
-  run, designing, genAssets, onGenDesign, onGenAssets, onUpdateRun, tab,
+  run,
+  designing,
+  genAssets,
+  onGenDesign,
+  onGenAssets,
+  onUpdateRun,
+  tab,
 }: {
   run: Run;
   designing: boolean;
@@ -1430,7 +1700,7 @@ function BrandWorkspace({
           onUpdateRun={onUpdateRun}
         />
       )}
-      {tab === "brand"  && (
+      {tab === "brand" && (
         <Step1View
           decoded={run.decoded}
           designed={run.designed}
@@ -1491,7 +1761,14 @@ function AssetsTab({
   const brandName = c.brand_name || hostnameOf(run.decoded.source_url);
   const canvases = run.assetCanvases?.length
     ? [{ ...run.assetCanvases[0], name: "Canvas" }]
-    : [{ id: "default", name: "Canvas", assetUrls: allAssets.map((asset) => asset.url), positions: run.assetCanvas || {} }];
+    : [
+        {
+          id: "default",
+          name: "Canvas",
+          assetUrls: allAssets.map((asset) => asset.url),
+          positions: run.assetCanvas || {},
+        },
+      ];
   const activeCanvasId = run.activeCanvasId || canvases[0].id;
   const activeCanvas = canvases.find((canvas) => canvas.id === activeCanvasId) || canvases[0];
   const positions = activeCanvas.positions || {};
@@ -1527,23 +1804,35 @@ function AssetsTab({
     const next = canvases.map((canvas) =>
       canvas.id === activeCanvas.id
         ? { ...canvas, positions: { ...(canvas.positions || {}), [id]: { x, y } } }
-        : canvas
+        : canvas,
     );
-    onUpdateRun({ assetCanvases: next, activeCanvasId: activeCanvas.id, assetCanvas: next.find((canvas) => canvas.id === activeCanvas.id)?.positions });
+    onUpdateRun({
+      assetCanvases: next,
+      activeCanvasId: activeCanvas.id,
+      assetCanvas: next.find((canvas) => canvas.id === activeCanvas.id)?.positions,
+    });
   }
 
   function saveZoom(nextZoom: number) {
     const next = canvases.map((canvas) =>
-      canvas.id === activeCanvas.id ? { ...canvas, zoom: nextZoom } : canvas
+      canvas.id === activeCanvas.id ? { ...canvas, zoom: nextZoom } : canvas,
     );
-    onUpdateRun({ assetCanvases: next, activeCanvasId: activeCanvas.id, assetCanvas: activeCanvas.positions || {} });
+    onUpdateRun({
+      assetCanvases: next,
+      activeCanvasId: activeCanvas.id,
+      assetCanvas: activeCanvas.positions || {},
+    });
   }
 
   function saveView(nextView: "canvas" | "tiles") {
     const next = canvases.map((canvas) =>
-      canvas.id === activeCanvas.id ? { ...canvas, view: nextView } : canvas
+      canvas.id === activeCanvas.id ? { ...canvas, view: nextView } : canvas,
     );
-    onUpdateRun({ assetCanvases: next, activeCanvasId: activeCanvas.id, assetCanvas: activeCanvas.positions || {} });
+    onUpdateRun({
+      assetCanvases: next,
+      activeCanvasId: activeCanvas.id,
+      assetCanvas: activeCanvas.positions || {},
+    });
   }
 
   function autoOrganize() {
@@ -1551,41 +1840,41 @@ function AssetsTab({
     assets.forEach((asset, index) => {
       next[asset.url] = defaultPosition(index);
     });
-    const updated = canvases.map((canvas) => canvas.id === activeCanvas.id ? { ...canvas, positions: next } : canvas);
+    const updated = canvases.map((canvas) =>
+      canvas.id === activeCanvas.id ? { ...canvas, positions: next } : canvas,
+    );
     onUpdateRun({ assetCanvases: updated, activeCanvasId: activeCanvas.id, assetCanvas: next });
   }
 
   return (
     <section className="relative h-[calc(100dvh-96px)] overflow-hidden bg-cream">
       <div className="absolute right-4 top-4 z-10 md:right-8">
-          <div className="flex shrink-0 rounded-pill border-2 border-ink bg-white p-0.5">
-            <button
-              type="button"
-              onClick={() => saveView("canvas")}
-              title="Canvas view"
-              aria-label="Canvas view"
-              className={`h-7 w-8 rounded-full text-caption ${view === "canvas" ? "bg-ink text-white" : "text-ink hover:bg-cream"}`}
-            >
-              ◫
-            </button>
-            <button
-              type="button"
-              onClick={() => saveView("tiles")}
-              title="Tile view"
-              aria-label="Tile view"
-              className={`h-7 w-8 rounded-full text-caption ${view === "tiles" ? "bg-ink text-white" : "text-ink hover:bg-cream"}`}
-            >
-              ▦
-            </button>
-          </div>
+        <div className="flex shrink-0 rounded-pill border-2 border-ink bg-white p-0.5">
+          <button
+            type="button"
+            onClick={() => saveView("canvas")}
+            title="Canvas view"
+            aria-label="Canvas view"
+            className={`h-7 w-8 rounded-full text-caption ${view === "canvas" ? "bg-ink text-white" : "text-ink hover:bg-cream"}`}
+          >
+            ◫
+          </button>
+          <button
+            type="button"
+            onClick={() => saveView("tiles")}
+            title="Tile view"
+            aria-label="Tile view"
+            className={`h-7 w-8 rounded-full text-caption ${view === "tiles" ? "bg-ink text-white" : "text-ink hover:bg-cream"}`}
+          >
+            ▦
+          </button>
+        </div>
       </div>
 
       {view === "tiles" ? (
         <div className="h-full overflow-auto px-4 pb-32 pt-20 md:px-8">
           <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {generatingAssets && (
-              <AssetGenerationCard labels={assetContextLabels} />
-            )}
+            {generatingAssets && <AssetGenerationCard labels={assetContextLabels} />}
             {assets.map((asset) => (
               <div key={asset.url} className="group">
                 <button
@@ -1594,12 +1883,32 @@ function AssetsTab({
                   className="block w-full overflow-hidden rounded-card border-2 border-ink bg-white text-left shadow-[6px_6px_0_0_rgba(255,144,232,0.22)] transition-transform hover:-translate-y-1"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={asset.url} alt={asset.type} className="aspect-video w-full rounded object-cover" />
+                  <img
+                    src={asset.url}
+                    alt={asset.type}
+                    className="aspect-video w-full rounded object-cover"
+                  />
                 </button>
                 <div className="mt-2 flex items-center gap-2">
-                  <button onClick={() => setPreviewAsset(asset)} className="rounded-pill bg-ink px-3 py-1 text-caption text-white">Open</button>
-                  <button onClick={() => navigator.clipboard.writeText(asset.prompt || asset.url)} className="rounded-pill border-2 border-ink bg-white px-3 py-1 text-caption">Copy prompt</button>
-                  <a href={asset.url} download={assetFilename(asset)} className="rounded-pill border-2 border-ink bg-white px-3 py-1 text-caption">Download</a>
+                  <button
+                    onClick={() => setPreviewAsset(asset)}
+                    className="rounded-pill bg-ink px-3 py-1 text-caption text-white"
+                  >
+                    Open
+                  </button>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(asset.prompt || asset.url)}
+                    className="rounded-pill border-2 border-ink bg-white px-3 py-1 text-caption"
+                  >
+                    Copy prompt
+                  </button>
+                  <a
+                    href={asset.url}
+                    download={assetFilename(asset)}
+                    className="rounded-pill border-2 border-ink bg-white px-3 py-1 text-caption"
+                  >
+                    Download
+                  </a>
                 </div>
               </div>
             ))}
@@ -1612,97 +1921,123 @@ function AssetsTab({
         </div>
       ) : (
         <div
-        className="h-full overflow-auto pb-32 pt-16"
-        onWheel={(e) => {
-          if (!e.metaKey && !e.ctrlKey) return;
-          e.preventDefault();
-          const rect = e.currentTarget.getBoundingClientRect();
-          const cursorX = (e.clientX - rect.left + e.currentTarget.scrollLeft) / zoom;
-          const cursorY = (e.clientY - rect.top + e.currentTarget.scrollTop) / zoom;
-          const direction = e.deltaY > 0 ? -1 : 1;
-          const nextZoom = Math.min(2.2, Math.max(0.35, Number((zoom + direction * 0.08).toFixed(2))));
-          saveZoom(nextZoom);
-          e.currentTarget.scrollLeft = cursorX * nextZoom - (e.clientX - rect.left);
-          e.currentTarget.scrollTop = cursorY * nextZoom - (e.clientY - rect.top);
-        }}
-        onMouseMove={(e) => {
-          if (!dragging) return;
-          const rect = e.currentTarget.getBoundingClientRect();
-          savePosition(
-            dragging.id,
-            (e.clientX - rect.left + e.currentTarget.scrollLeft) / zoom - dragging.dx,
-            (e.clientY - rect.top + e.currentTarget.scrollTop) / zoom - dragging.dy,
-          );
-        }}
-        onMouseUp={() => setDragging(null)}
-        onMouseLeave={() => setDragging(null)}
-      >
-        <div
-          className="absolute right-4 top-28 z-10 rounded-pill border-2 border-ink bg-white px-3 py-1 text-caption uppercase tracking-widest"
-        >
-          {Math.round(zoom * 100)}%
-        </div>
-        <div
-          className="relative mx-auto"
-          style={{ width: canvasWidth * zoom, height: canvasHeight * zoom }}
-        >
-        <div
-          className="relative origin-top-left"
-          style={{
-            width: canvasWidth,
-            height: canvasHeight,
-            transform: `scale(${zoom})`,
-            backgroundImage: "radial-gradient(rgba(0,0,0,0.16) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
+          className="h-full overflow-auto pb-32 pt-16"
+          onWheel={(e) => {
+            if (!e.metaKey && !e.ctrlKey) return;
+            e.preventDefault();
+            const rect = e.currentTarget.getBoundingClientRect();
+            const cursorX = (e.clientX - rect.left + e.currentTarget.scrollLeft) / zoom;
+            const cursorY = (e.clientY - rect.top + e.currentTarget.scrollTop) / zoom;
+            const direction = e.deltaY > 0 ? -1 : 1;
+            const nextZoom = Math.min(2.2, Math.max(0.35, Number((zoom + direction * 0.08).toFixed(2))));
+            saveZoom(nextZoom);
+            e.currentTarget.scrollLeft = cursorX * nextZoom - (e.clientX - rect.left);
+            e.currentTarget.scrollTop = cursorY * nextZoom - (e.clientY - rect.top);
           }}
-        >
-          {generatingAssets && (
-            <div className="absolute rounded-card border-2 border-ink bg-white p-5" style={{ left: 420, top: 140, width: 420, height: 250 }}>
-              <AssetGenerationCard labels={assetContextLabels} />
-            </div>
-          )}
-
-          {assets.map((asset, index) => {
-            const fallback = defaultPosition(index);
-            const left = positions[asset.url]?.x ?? fallback.x;
-            const top = positions[asset.url]?.y ?? fallback.y;
-            const width = asset.width > asset.height ? 380 : 260;
-            return (
-              <div
-                key={asset.url}
-                className="absolute group cursor-grab active:cursor-grabbing"
-                style={{ left, top, width }}
-                onMouseDown={(e) => {
-                  const target = e.target as HTMLElement;
-                  if (target.closest("button[data-action]")) return;
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setDragging({ id: asset.url, dx: (e.clientX - rect.left) / zoom, dy: (e.clientY - rect.top) / zoom });
-                }}
-              >
-                <button
-                  onClick={() => { if (!dragging) setPreviewAsset(asset); }}
-                  className="block w-full overflow-hidden rounded-card border-2 border-ink bg-white text-left shadow-[6px_6px_0_0_rgba(255,144,232,0.28)] transition-transform hover:-translate-y-1"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={asset.url} alt={asset.type} className="w-full rounded object-cover" />
-                </button>
-                <div className="mt-2 flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button data-action onClick={() => setPreviewAsset(asset)} className="rounded-pill bg-ink px-3 py-1 text-caption text-white">Open</button>
-                  <button data-action onClick={() => navigator.clipboard.writeText(asset.prompt || asset.url)} className="rounded-pill border-2 border-ink bg-white px-3 py-1 text-caption">Copy prompt</button>
-                  <a data-action href={asset.url} download={assetFilename(asset)} className="rounded-pill border-2 border-ink bg-white px-3 py-1 text-caption">Download</a>
-                </div>
-              </div>
+          onMouseMove={(e) => {
+            if (!dragging) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            savePosition(
+              dragging.id,
+              (e.clientX - rect.left + e.currentTarget.scrollLeft) / zoom - dragging.dx,
+              (e.clientY - rect.top + e.currentTarget.scrollTop) / zoom - dragging.dy,
             );
-          })}
+          }}
+          onMouseUp={() => setDragging(null)}
+          onMouseLeave={() => setDragging(null)}
+        >
+          <div className="absolute right-4 top-28 z-10 rounded-pill border-2 border-ink bg-white px-3 py-1 text-caption uppercase tracking-widest">
+            {Math.round(zoom * 100)}%
+          </div>
+          <div
+            className="relative mx-auto"
+            style={{ width: canvasWidth * zoom, height: canvasHeight * zoom }}
+          >
+            <div
+              className="relative origin-top-left"
+              style={{
+                width: canvasWidth,
+                height: canvasHeight,
+                transform: `scale(${zoom})`,
+                backgroundImage: "radial-gradient(rgba(0,0,0,0.16) 1px, transparent 1px)",
+                backgroundSize: "28px 28px",
+              }}
+            >
+              {generatingAssets && (
+                <div
+                  className="absolute rounded-card border-2 border-ink bg-white p-5"
+                  style={{ left: 420, top: 140, width: 420, height: 250 }}
+                >
+                  <AssetGenerationCard labels={assetContextLabels} />
+                </div>
+              )}
 
-          {!generatingAssets && assets.length === 0 && (
-            <div className="absolute left-[420px] top-[140px] w-80 rounded-card border-2 border-ink bg-white p-6">
-              <p className="text-bodysm text-dark-gray">Start with one image.</p>
+              {assets.map((asset, index) => {
+                const fallback = defaultPosition(index);
+                const left = positions[asset.url]?.x ?? fallback.x;
+                const top = positions[asset.url]?.y ?? fallback.y;
+                const width = asset.width > asset.height ? 380 : 260;
+                return (
+                  <div
+                    key={asset.url}
+                    className="absolute group cursor-grab active:cursor-grabbing"
+                    style={{ left, top, width }}
+                    onMouseDown={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.closest("button[data-action]")) return;
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setDragging({
+                        id: asset.url,
+                        dx: (e.clientX - rect.left) / zoom,
+                        dy: (e.clientY - rect.top) / zoom,
+                      });
+                    }}
+                  >
+                    <button
+                      onClick={() => {
+                        if (!dragging) setPreviewAsset(asset);
+                      }}
+                      className="block w-full overflow-hidden rounded-card border-2 border-ink bg-white text-left shadow-[6px_6px_0_0_rgba(255,144,232,0.28)] transition-transform hover:-translate-y-1"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={asset.url} alt={asset.type} className="w-full rounded object-cover" />
+                    </button>
+                    <div className="mt-2 flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        data-action
+                        onClick={() => setPreviewAsset(asset)}
+                        className="rounded-pill bg-ink px-3 py-1 text-caption text-white"
+                      >
+                        Open
+                      </button>
+                      <button
+                        data-action
+                        onClick={() => navigator.clipboard.writeText(asset.prompt || asset.url)}
+                        className="rounded-pill border-2 border-ink bg-white px-3 py-1 text-caption"
+                      >
+                        Copy prompt
+                      </button>
+                      <a
+                        data-action
+                        href={asset.url}
+                        download={assetFilename(asset)}
+                        className="rounded-pill border-2 border-ink bg-white px-3 py-1 text-caption"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {!generatingAssets && assets.length === 0 && (
+                <div className="absolute left-[420px] top-[140px] w-80 rounded-card border-2 border-ink bg-white p-6">
+                  <p className="text-bodysm text-dark-gray">Start with one image.</p>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
-        </div>
-      </div>
       )}
 
       <div className="absolute bottom-4 left-4 right-4 z-20 md:bottom-6">
@@ -1735,18 +2070,54 @@ function AssetsTab({
 
       {previewAsset && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/75 p-4">
-          <button type="button" aria-label="Close image preview" className="absolute inset-0" onClick={() => setPreviewAsset(null)} />
+          <button
+            type="button"
+            aria-label="Close image preview"
+            className="absolute inset-0"
+            onClick={() => setPreviewAsset(null)}
+          />
           <div className="relative z-10 max-h-[92dvh] w-full max-w-5xl rounded-card border-2 border-ink bg-white p-4 shadow-[10px_10px_0_0_rgba(255,144,232,0.45)]">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-caption uppercase tracking-widest text-dark-gray">{previewAsset.width}x{previewAsset.height}</p>
-              <button type="button" onClick={() => setPreviewAsset(null)} className="h-9 w-9 rounded-full border-2 border-ink bg-cream text-body hover:bg-white" aria-label="Close">x</button>
+              <p className="text-caption uppercase tracking-widest text-dark-gray">
+                {previewAsset.width}x{previewAsset.height}
+              </p>
+              <button
+                type="button"
+                onClick={() => setPreviewAsset(null)}
+                className="h-9 w-9 rounded-full border-2 border-ink bg-cream text-body hover:bg-white"
+                aria-label="Close"
+              >
+                x
+              </button>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={previewAsset.url} alt={previewAsset.type} className="max-h-[70dvh] w-full rounded-card object-contain bg-cream" />
+            <img
+              src={previewAsset.url}
+              alt={previewAsset.type}
+              className="max-h-[70dvh] w-full rounded-card object-contain bg-cream"
+            />
             <div className="mt-3 flex flex-wrap gap-2">
-              <a href={previewAsset.url} target="_blank" rel="noreferrer" className="text-bodysm bg-ink text-white px-4 py-1.5 rounded-pill">Open in new tab</a>
-              <a href={previewAsset.url} download={assetFilename(previewAsset)} className="text-bodysm bg-white border-2 border-ink text-ink px-4 py-1.5 rounded-pill">Download</a>
-              <button onClick={() => navigator.clipboard.writeText(previewAsset.prompt || previewAsset.url)} className="text-bodysm bg-white border-2 border-ink text-ink px-4 py-1.5 rounded-pill">Copy prompt</button>
+              <a
+                href={previewAsset.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-bodysm bg-ink text-white px-4 py-1.5 rounded-pill"
+              >
+                Open in new tab
+              </a>
+              <a
+                href={previewAsset.url}
+                download={assetFilename(previewAsset)}
+                className="text-bodysm bg-white border-2 border-ink text-ink px-4 py-1.5 rounded-pill"
+              >
+                Download
+              </a>
+              <button
+                onClick={() => navigator.clipboard.writeText(previewAsset.prompt || previewAsset.url)}
+                className="text-bodysm bg-white border-2 border-ink text-ink px-4 py-1.5 rounded-pill"
+              >
+                Copy prompt
+              </button>
             </div>
           </div>
         </div>
@@ -1786,21 +2157,31 @@ function StudioTab({
   const visualAssets = run.assets?.assets || [];
   const studioBrand = run.decoded.branding || {};
   const studioCopy = run.decoded.copy || {};
-  const studioColors = Object.values(studioBrand.colors || {}).filter((value): value is string => Boolean(value)).slice(0, 6);
+  const studioColors = Object.values(studioBrand.colors || {})
+    .filter((value): value is string => Boolean(value))
+    .slice(0, 6);
   const studioImages = [
     studioBrand.images?.logo ? { url: studioBrand.images.logo, label: "Logo" } : null,
     studioBrand.images?.ogImage ? { url: studioBrand.images.ogImage, label: "OG image" } : null,
     ...referenceImages.map((image) => ({ url: image.assetUrl || image.url, label: image.name })),
-  ].filter((image): image is { url: string; label: string } => Boolean(image)).slice(0, 5);
+  ]
+    .filter((image): image is { url: string; label: string } => Boolean(image))
+    .slice(0, 5);
   const generationLoadingContext: GenerationLoadingContext = {
     labels: [
       `Reading ${hostnameOf(run.decoded.source_url)}`,
-      studioBrand.images?.logo ? `Using ${studioCopy.brand_name || "brand"} logo` : `Finding ${studioCopy.brand_name || "brand"} identity`,
+      studioBrand.images?.logo
+        ? `Using ${studioCopy.brand_name || "brand"} logo`
+        : `Finding ${studioCopy.brand_name || "brand"} identity`,
       studioColors.length ? `Applying ${studioColors.length} brand colors` : "Applying brand colors",
       run.designed?.design_md ? "Using design.md" : "Waiting for design.md",
       run.indexCss ? "Using index.css" : "Preparing index.css",
-      referenceImages.length ? `Using ${referenceImages.length} image reference${referenceImages.length === 1 ? "" : "s"}` : "Checking image references",
-      referenceHtml.length ? `Using ${referenceHtml.length} HTML reference${referenceHtml.length === 1 ? "" : "s"}` : "Checking HTML references",
+      referenceImages.length
+        ? `Using ${referenceImages.length} image reference${referenceImages.length === 1 ? "" : "s"}`
+        : "Checking image references",
+      referenceHtml.length
+        ? `Using ${referenceHtml.length} HTML reference${referenceHtml.length === 1 ? "" : "s"}`
+        : "Checking HTML references",
       "Shaping image prompt",
     ],
     colors: studioColors,
@@ -1814,13 +2195,16 @@ function StudioTab({
   }
   function copyForAgent() {
     if (!viewer) return;
-    const text = viewer.item.kind === "html"
-      ? wrapSnippet(viewer.item.mini.html, run.indexCss)
-      : [
-          `Image: ${viewer.item.asset.url}`,
-          viewer.item.asset.prompt ? `Prompt: ${viewer.item.asset.prompt}` : "",
-          `Type: ${viewer.item.asset.type}`,
-        ].filter(Boolean).join("\n");
+    const text =
+      viewer.item.kind === "html"
+        ? wrapSnippet(viewer.item.mini.html, run.indexCss)
+        : [
+            `Image: ${viewer.item.asset.url}`,
+            viewer.item.asset.prompt ? `Prompt: ${viewer.item.asset.prompt}` : "",
+            `Type: ${viewer.item.asset.type}`,
+          ]
+            .filter(Boolean)
+            .join("\n");
     navigator.clipboard.writeText(text);
     flash("agent");
   }
@@ -1880,17 +2264,27 @@ function StudioTab({
   function currentGenerationContext(): GenerationContext {
     const b = run.decoded.branding || {};
     const brandImages = [
-      b.images?.ogImage ? { url: b.images.ogImage, asset_url: b.images.ogImage, name: "Extracted OG image" } : null,
+      b.images?.ogImage
+        ? { url: b.images.ogImage, asset_url: b.images.ogImage, name: "Extracted OG image" }
+        : null,
       b.images?.logo ? { url: b.images.logo, asset_url: b.images.logo, name: "Extracted logo" } : null,
-      b.images?.favicon ? { url: b.images.favicon, asset_url: b.images.favicon, name: "Extracted favicon" } : null,
+      b.images?.favicon
+        ? { url: b.images.favicon, asset_url: b.images.favicon, name: "Extracted favicon" }
+        : null,
     ].filter((image): image is { url: string; asset_url: string; name: string } => Boolean(image));
-    const selectedImages = referenceImages.map(({ url, assetUrl, name }) => ({ url, asset_url: assetUrl || url, name }));
+    const selectedImages = referenceImages.map(({ url, assetUrl, name }) => ({
+      url,
+      asset_url: assetUrl || url,
+      name,
+    }));
     const seen = new Set<string>();
-    const referenceImagePayload = [...brandImages, ...selectedImages].filter((image) => {
-      if (seen.has(image.url)) return false;
-      seen.add(image.url);
-      return true;
-    }).slice(0, 6);
+    const referenceImagePayload = [...brandImages, ...selectedImages]
+      .filter((image) => {
+        if (seen.has(image.url)) return false;
+        seen.add(image.url);
+        return true;
+      })
+      .slice(0, 6);
     return {
       referenceImages: referenceImagePayload,
       referenceHtml: referenceHtml.map(({ name, prompt, html }) => ({ name, prompt, html })),
@@ -1907,7 +2301,12 @@ function StudioTab({
     if (!viewer) return;
     if (viewer.item.kind === "image") {
       const asset = viewer.item.asset;
-      addReferenceImage({ url: asset.url, assetUrl: asset.url, name: asset.type === "custom" ? "Generated image" : asset.type, source: "asset" });
+      addReferenceImage({
+        url: asset.url,
+        assetUrl: asset.url,
+        name: asset.type === "custom" ? "Generated image" : asset.type,
+        source: "asset",
+      });
       return;
     }
     addReferenceHtml(viewer.item.mini);
@@ -2049,7 +2448,9 @@ function StudioTab({
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setPendingHtml((items) => items.filter((item) => !pending.some((pendingItem) => pendingItem.id === item.id)));
+      setPendingHtml((items) =>
+        items.filter((item) => !pending.some((pendingItem) => pendingItem.id === item.id)),
+      );
       setStreaming(false);
     }
   }
@@ -2077,7 +2478,9 @@ function StudioTab({
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setPendingHtml((items) => items.filter((item) => !pending.some((pendingItem) => pendingItem.id === item.id)));
+      setPendingHtml((items) =>
+        items.filter((item) => !pending.some((pendingItem) => pendingItem.id === item.id)),
+      );
       setStreaming(false);
     }
   }
@@ -2144,7 +2547,9 @@ function StudioTab({
     }
     doc.open();
     const brandStyle = run.indexCss ? `<style>${run.indexCss}</style>` : "";
-    doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:0;font-family:system-ui,sans-serif;background:#fff;color:#000;}</style>${brandStyle}</head><body>`);
+    doc.write(
+      `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:0;font-family:system-ui,sans-serif;background:#fff;color:#000;}</style>${brandStyle}</head><body>`,
+    );
 
     try {
       const b = run.decoded.branding || {};
@@ -2227,7 +2632,9 @@ function StudioTab({
       setCharCount(0);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
-      try { doc.close(); } catch {}
+      try {
+        doc.close();
+      } catch {}
     } finally {
       setPendingHtml((items) => items.filter((item) => item.id !== pending.id));
       setStreaming(false);
@@ -2265,36 +2672,46 @@ function StudioTab({
       />
 
       {/* generations viewer — hidden while a new one is streaming so the live preview takes over */}
-      {(charCount === 0 || !streaming) && ((run.minis && run.minis.length > 0) || visualAssets.length > 0 || pendingImages.length > 0 || pendingHtml.length > 0) && (
-        <GenerationsList
-          minis={run.minis || []}
-          assets={visualAssets}
-          pendingImages={pendingImages}
-          pendingHtml={pendingHtml}
-          indexCss={run.indexCss}
-          generationContext={generationLoadingContext}
-          view={studioView}
-          onExpand={setExpandedMini}
-          onExpandAsset={setExpandedAsset}
-          onEditHtml={(mini) => {
-            addReferenceHtml(mini);
-            editPrompt(mini.prompt, "html");
-          }}
-          onEditAsset={(asset) => editPrompt(asset.prompt || "", "image")}
-          onUseAssetAsContext={(asset) => addReferenceImage({ url: asset.url, assetUrl: asset.url, name: asset.type === "custom" ? "Generated image" : asset.type, source: "asset" })}
-          onUseHtmlAsContext={addReferenceHtml}
-          onDeleteAsset={(asset) => {
-            const nextAssets = visualAssets.filter((a) => a.url !== asset.url);
-            onUpdateRun({ assets: { ...(run.assets || {}), assets: nextAssets } });
-          }}
-          onDeleteHtml={(mini) => {
-            const nextMinis = (run.minis || []).filter((m) => m.id !== mini.id);
-            onUpdateRun({ minis: nextMinis });
-          }}
-          onViewerChange={setViewer}
-        />
-      )}
-
+      {(charCount === 0 || !streaming) &&
+        ((run.minis && run.minis.length > 0) ||
+          visualAssets.length > 0 ||
+          pendingImages.length > 0 ||
+          pendingHtml.length > 0) && (
+          <GenerationsList
+            minis={run.minis || []}
+            assets={visualAssets}
+            pendingImages={pendingImages}
+            pendingHtml={pendingHtml}
+            indexCss={run.indexCss}
+            generationContext={generationLoadingContext}
+            view={studioView}
+            onExpand={setExpandedMini}
+            onExpandAsset={setExpandedAsset}
+            onEditHtml={(mini) => {
+              addReferenceHtml(mini);
+              editPrompt(mini.prompt, "html");
+            }}
+            onEditAsset={(asset) => editPrompt(asset.prompt || "", "image")}
+            onUseAssetAsContext={(asset) =>
+              addReferenceImage({
+                url: asset.url,
+                assetUrl: asset.url,
+                name: asset.type === "custom" ? "Generated image" : asset.type,
+                source: "asset",
+              })
+            }
+            onUseHtmlAsContext={addReferenceHtml}
+            onDeleteAsset={(asset) => {
+              const nextAssets = visualAssets.filter((a) => a.url !== asset.url);
+              onUpdateRun({ assets: { ...(run.assets || {}), assets: nextAssets } });
+            }}
+            onDeleteHtml={(mini) => {
+              const nextMinis = (run.minis || []).filter((m) => m.id !== mini.id);
+              onUpdateRun({ minis: nextMinis });
+            }}
+            onViewerChange={setViewer}
+          />
+        )}
 
       {/* unified bottom dock: viewer toolbar + prompt input + suggestions */}
       <div className="relative z-20 mt-4 overflow-visible rounded-card border-2 border-ink bg-white md:fixed md:bottom-16 md:left-1/2 md:mt-0 md:w-[min(68rem,calc(100vw-3rem))] md:-translate-x-1/2 md:rounded-[34px] md:shadow-[0_16px_50px_rgba(0,0,0,0.12)]">
@@ -2305,28 +2722,62 @@ function StudioTab({
               disabled={!viewer.canOlder}
               aria-label="Older generation"
               className="w-8 h-8 flex items-center justify-center bg-cream border-2 border-ink text-ink rounded-full hover:bg-white disabled:opacity-30"
-            >‹</button>
-            <span className="text-caption text-dark-gray tabular-nums">{viewer.number} / {viewer.total}</span>
+            >
+              ‹
+            </button>
+            <span className="text-caption text-dark-gray tabular-nums">
+              {viewer.number} / {viewer.total}
+            </span>
             <button
               onClick={viewer.onNext}
               disabled={!viewer.canNewer}
               aria-label="Newer generation"
               className="w-8 h-8 flex items-center justify-center bg-cream border-2 border-ink text-ink rounded-full hover:bg-white disabled:opacity-30"
-            >›</button>
-            <p className="text-caption text-dark-gray md:ml-3 truncate italic max-w-[14rem] md:max-w-md">{viewer.prompt}</p>
+            >
+              ›
+            </button>
+            <p className="text-caption text-dark-gray md:ml-3 truncate italic max-w-[14rem] md:max-w-md">
+              {viewer.prompt}
+            </p>
             <div className="md:ml-auto flex items-center gap-2 overflow-x-auto">
               {viewer.item.kind === "html" ? (
                 <>
                   <button
-                    onClick={() => { navigator.clipboard.writeText(viewer.item.kind === "html" ? viewer.item.mini.html : ""); flash("html"); }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(viewer.item.kind === "html" ? viewer.item.mini.html : "");
+                      flash("html");
+                    }}
                     title={copied === "html" ? "Copied!" : "Copy HTML"}
                     aria-label="Copy HTML"
                     className="w-8 h-8 flex items-center justify-center bg-ink text-white rounded-full hover:bg-dark-gray"
                   >
                     {copied === "html" ? (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                     ) : (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
                     )}
                   </button>
                   <button
@@ -2342,18 +2793,47 @@ function StudioTab({
                     aria-label="Download"
                     className="w-8 h-8 flex items-center justify-center bg-cream border-2 border-ink text-ink rounded-full hover:bg-white"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
                   </button>
                 </>
               ) : (
                 <>
                   <button
-                    onClick={() => navigator.clipboard.writeText(viewer.item.kind === "image" ? viewer.item.asset.prompt || viewer.item.asset.url : "")}
+                    onClick={() =>
+                      navigator.clipboard.writeText(
+                        viewer.item.kind === "image" ? viewer.item.asset.prompt || viewer.item.asset.url : "",
+                      )
+                    }
                     title="Copy prompt"
                     aria-label="Copy prompt"
                     className="w-8 h-8 flex items-center justify-center bg-ink text-white rounded-full hover:bg-dark-gray"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
                   </button>
                   {viewer.item.kind === "image" && (
                     <a
@@ -2363,7 +2843,20 @@ function StudioTab({
                       aria-label="Download image"
                       className="w-8 h-8 flex items-center justify-center bg-cream border-2 border-ink text-ink rounded-full hover:bg-white"
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
                     </a>
                   )}
                 </>
@@ -2374,7 +2867,19 @@ function StudioTab({
                 aria-label="Edit prompt"
                 className="w-8 h-8 flex items-center justify-center bg-cream border-2 border-ink text-ink rounded-full hover:bg-white"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
               </button>
               <button
                 onClick={addViewerToContext}
@@ -2385,12 +2890,30 @@ function StudioTab({
                 +
               </button>
               <button
-                onClick={() => viewer.item.kind === "image" ? queueImageGenerations([viewer.prompt]) : generate(viewer.prompt)}
+                onClick={() =>
+                  viewer.item.kind === "image"
+                    ? queueImageGenerations([viewer.prompt])
+                    : generate(viewer.prompt)
+                }
                 title="Regenerate"
                 aria-label="Regenerate"
                 className="w-8 h-8 flex items-center justify-center bg-cream border-2 border-ink text-ink rounded-full hover:bg-white"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="23 4 23 10 17 10" />
+                  <polyline points="1 20 1 14 7 14" />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" />
+                  <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14" />
+                </svg>
               </button>
               <button
                 onClick={copyForAgent}
@@ -2399,9 +2922,32 @@ function StudioTab({
                 className="px-3 h-8 flex items-center gap-2 bg-cream border-2 border-ink text-ink rounded-pill text-caption hover:bg-white whitespace-nowrap"
               >
                 {copied === "agent" ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
                 ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  </svg>
                 )}
                 {copied === "agent" ? "Copied" : "Copy for agent"}
               </button>
@@ -2423,18 +2969,27 @@ function StudioTab({
             <div className="mx-auto mb-2 flex max-w-6xl items-center gap-2 overflow-x-auto px-1">
               <div className="flex shrink-0 items-center gap-2 rounded-full border-2 border-ink bg-ink px-3 py-1.5 text-caption text-white">
                 <span>Context stack</span>
-                <span className="rounded-full bg-white px-2 py-0.5 text-ink">{referenceImages.length + referenceHtml.length}</span>
+                <span className="rounded-full bg-white px-2 py-0.5 text-ink">
+                  {referenceImages.length + referenceHtml.length}
+                </span>
               </div>
               {referenceImages.map((image, index) => (
-                <div key={image.id} className="flex shrink-0 items-center gap-2 rounded-full border-2 border-ink bg-white p-1 pr-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cream text-caption text-ink">{index + 1}</span>
+                <div
+                  key={image.id}
+                  className="flex shrink-0 items-center gap-2 rounded-full border-2 border-ink bg-white p-1 pr-2"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cream text-caption text-ink">
+                    {index + 1}
+                  </span>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={image.url} alt="" className="h-7 w-7 rounded-full object-cover" />
                   <span className="max-w-28 truncate text-caption text-dark-gray">Image · {image.name}</span>
                   <button
                     type="button"
                     aria-label={`Remove ${image.name}`}
-                    onClick={() => setReferenceImages((images) => images.filter((item) => item.id !== image.id))}
+                    onClick={() =>
+                      setReferenceImages((images) => images.filter((item) => item.id !== image.id))
+                    }
                     className="flex h-5 w-5 items-center justify-center rounded-full bg-cream text-caption hover:bg-offset"
                   >
                     ×
@@ -2442,9 +2997,16 @@ function StudioTab({
                 </div>
               ))}
               {referenceHtml.map((html, index) => (
-                <div key={html.id} className="flex shrink-0 items-center gap-2 rounded-full border-2 border-ink bg-white p-1 pr-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cream text-caption text-ink">{referenceImages.length + index + 1}</span>
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-caption text-white">▧</span>
+                <div
+                  key={html.id}
+                  className="flex shrink-0 items-center gap-2 rounded-full border-2 border-ink bg-white p-1 pr-2"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cream text-caption text-ink">
+                    {referenceImages.length + index + 1}
+                  </span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-caption text-white">
+                    ▧
+                  </span>
                   <span className="max-w-36 truncate text-caption text-dark-gray">HTML · {html.name}</span>
                   <button
                     type="button"
@@ -2466,7 +3028,11 @@ function StudioTab({
             </div>
           )}
           <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex h-11 shrink-0 items-center gap-1 rounded-full bg-cream p-1.5" role="tablist" aria-label="Generation type">
+            <div
+              className="flex h-11 shrink-0 items-center gap-1 rounded-full bg-cream p-1.5"
+              role="tablist"
+              aria-label="Generation type"
+            >
               {[
                 { key: "html" as const, label: "HTML" },
                 { key: "image" as const, label: "Image" },
@@ -2516,7 +3082,11 @@ function StudioTab({
               {creating ? "…" : promptLines.length > 1 ? promptLines.length : "↗"}
             </button>
           </div>
-          {error && <p className="mt-2 text-bodysm"><b>Error:</b> {error}</p>}
+          {error && (
+            <p className="mt-2 text-bodysm">
+              <b>Error:</b> {error}
+            </p>
+          )}
         </div>
       </div>
       {expandedMini && (
@@ -2549,11 +3119,7 @@ function StudioTab({
             ×
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={expandedAsset.url}
-            alt={expandedAsset.type}
-            className="h-full w-full object-contain"
-          />
+          <img src={expandedAsset.url} alt={expandedAsset.type} className="h-full w-full object-contain" />
           <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2 rounded-full bg-white p-2">
             <button
               type="button"
@@ -2591,11 +3157,13 @@ type ViewerInfo = {
   onNext: () => void;
 };
 
-function interleaveCanvasItems<T extends { sortKey: number }, U extends { sortKey: number }>(left: T[], right: U[]): Array<T | U> {
+function interleaveCanvasItems<T extends { sortKey: number }, U extends { sortKey: number }>(
+  left: T[],
+  right: U[],
+): Array<T | U> {
   const result: Array<T | U> = [];
-  const queues: [Array<T | U>, Array<T | U>] = left[0]?.sortKey >= right[0]?.sortKey
-    ? [left, right]
-    : [right, left];
+  const queues: [Array<T | U>, Array<T | U>] =
+    left[0]?.sortKey >= right[0]?.sortKey ? [left, right] : [right, left];
   let index = 0;
   while (queues[0].length > index || queues[1].length > index) {
     if (queues[0][index]) result.push(queues[0][index]);
@@ -2606,7 +3174,22 @@ function interleaveCanvasItems<T extends { sortKey: number }, U extends { sortKe
 }
 
 function GenerationsList({
-  minis, assets, pendingImages, pendingHtml, indexCss, generationContext, view, onExpand, onExpandAsset, onEditHtml, onEditAsset, onUseAssetAsContext, onUseHtmlAsContext, onDeleteAsset, onDeleteHtml, onViewerChange,
+  minis,
+  assets,
+  pendingImages,
+  pendingHtml,
+  indexCss,
+  generationContext,
+  view,
+  onExpand,
+  onExpandAsset,
+  onEditHtml,
+  onEditAsset,
+  onUseAssetAsContext,
+  onUseHtmlAsContext,
+  onDeleteAsset,
+  onDeleteHtml,
+  onViewerChange,
 }: {
   minis: MiniAsset[];
   assets: Asset[];
@@ -2628,10 +3211,15 @@ function GenerationsList({
   const [idx, setIdx] = useState(0);
   const completedItems = useMemo<SlideItem[]>(() => {
     const htmlItems: SlideItem[] = minis.map((mini) => ({ kind: "html", mini, sortKey: mini.createdAt }));
-    const imageItems: SlideItem[] = assets.map((asset, index) => ({ kind: "image", asset, sortKey: asset.createdAt || Number.MAX_SAFE_INTEGER - index }));
+    const imageItems: SlideItem[] = assets.map((asset, index) => ({
+      kind: "image",
+      asset,
+      sortKey: asset.createdAt || Number.MAX_SAFE_INTEGER - index,
+    }));
     return interleaveCanvasItems(htmlItems, imageItems);
   }, [minis, assets]);
-  const firstCompletedId = completedItems[0]?.kind === "html" ? completedItems[0].mini.id : completedItems[0]?.asset.url;
+  const firstCompletedId =
+    completedItems[0]?.kind === "html" ? completedItems[0].mini.id : completedItems[0]?.asset.url;
   const lastFirstId = useRef(firstCompletedId);
   useEffect(() => {
     if (firstCompletedId !== lastFirstId.current) {
@@ -2643,18 +3231,33 @@ function GenerationsList({
   const current = completedItems[safeIdx];
   const canvasItems = useMemo(() => {
     const htmlItems = [
-      ...pendingHtml.map((pending) => ({ kind: "pending-html" as const, pending, sortKey: pending.createdAt })),
+      ...pendingHtml.map((pending) => ({
+        kind: "pending-html" as const,
+        pending,
+        sortKey: pending.createdAt,
+      })),
       ...minis.map((mini) => ({ kind: "html" as const, mini, sortKey: mini.createdAt })),
     ];
     const imageItems = [
-      ...pendingImages.map((pending) => ({ kind: "pending-image" as const, pending, sortKey: pending.createdAt })),
-      ...assets.map((asset, index) => ({ kind: "image" as const, asset, sortKey: asset.createdAt || Number.MAX_SAFE_INTEGER - index })),
+      ...pendingImages.map((pending) => ({
+        kind: "pending-image" as const,
+        pending,
+        sortKey: pending.createdAt,
+      })),
+      ...assets.map((asset, index) => ({
+        kind: "image" as const,
+        asset,
+        sortKey: asset.createdAt || Number.MAX_SAFE_INTEGER - index,
+      })),
     ];
     return interleaveCanvasItems(htmlItems, imageItems);
   }, [minis, assets, pendingImages, pendingHtml]);
 
   useEffect(() => {
-    if (!current) { onViewerChange(null); return; }
+    if (!current) {
+      onViewerChange(null);
+      return;
+    }
     onViewerChange({
       item: current,
       prompt: current.kind === "html" ? current.mini.prompt : current.asset.prompt || current.asset.type,
@@ -2746,7 +3349,10 @@ function GenerationsList({
                   <div className="absolute bottom-3 right-3 z-20 flex translate-y-1 gap-1 opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100">
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); onEditAsset(asset); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditAsset(asset);
+                      }}
                       aria-label={`Edit ${asset.type} prompt`}
                       title="Edit prompt"
                       className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-cream"
@@ -2755,7 +3361,10 @@ function GenerationsList({
                     </button>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); onUseAssetAsContext(asset); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUseAssetAsContext(asset);
+                      }}
                       aria-label={`Use ${asset.type} as context`}
                       title="Use as context"
                       className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-cream"
@@ -2764,7 +3373,10 @@ function GenerationsList({
                     </button>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); onExpandAsset(asset); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onExpandAsset(asset);
+                      }}
                       aria-label={`Open ${asset.type} full screen`}
                       title="Expand"
                       className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-cream"
@@ -2773,7 +3385,10 @@ function GenerationsList({
                     </button>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(asset.prompt || asset.url); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(asset.prompt || asset.url);
+                      }}
                       aria-label="Copy prompt"
                       title="Copy prompt"
                       className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-white hover:bg-dark-gray"
@@ -2792,7 +3407,10 @@ function GenerationsList({
                     </a>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); onDeleteAsset(asset); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteAsset(asset);
+                      }}
                       aria-label={`Delete ${asset.type}`}
                       title="Delete"
                       className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-pink"
@@ -2804,7 +3422,10 @@ function GenerationsList({
               );
             }
             const mini = item.mini;
-            const miniIndex = Math.max(0, completedItems.findIndex((slide) => slide.kind === "html" && slide.mini.id === mini.id));
+            const miniIndex = Math.max(
+              0,
+              completedItems.findIndex((slide) => slide.kind === "html" && slide.mini.id === mini.id),
+            );
             return (
               <div
                 key={mini.id}
@@ -2815,7 +3436,10 @@ function GenerationsList({
               >
                 <button
                   type="button"
-                  onClick={() => { setIdx(miniIndex); onExpand(mini); }}
+                  onClick={() => {
+                    setIdx(miniIndex);
+                    onExpand(mini);
+                  }}
                   className="absolute inset-0 z-10"
                   aria-label={`Open ${mini.prompt}`}
                 />
@@ -2823,7 +3447,10 @@ function GenerationsList({
                 <div className="pointer-events-none absolute bottom-3 right-3 z-20 flex translate-y-1 gap-1 opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100">
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); onEditHtml(mini); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditHtml(mini);
+                    }}
                     aria-label="Edit prompt"
                     title="Edit prompt"
                     className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-cream"
@@ -2832,7 +3459,10 @@ function GenerationsList({
                   </button>
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); onUseHtmlAsContext(mini); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUseHtmlAsContext(mini);
+                    }}
                     aria-label="Use as context"
                     title="Use as context"
                     className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-cream"
@@ -2841,7 +3471,10 @@ function GenerationsList({
                   </button>
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(mini.html); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigator.clipboard.writeText(mini.html);
+                    }}
                     aria-label="Copy HTML"
                     title="Copy HTML"
                     className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-ink text-white hover:bg-dark-gray"
@@ -2866,7 +3499,10 @@ function GenerationsList({
                   </button>
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); onDeleteHtml(mini); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteHtml(mini);
+                    }}
                     aria-label="Delete generation"
                     title="Delete"
                     className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-white text-ink hover:bg-pink"
@@ -2901,7 +3537,13 @@ function GenerationsList({
   );
 }
 
-function PendingImageCard({ pending, context }: { pending: PendingImage; context: GenerationLoadingContext }) {
+function PendingImageCard({
+  pending,
+  context,
+}: {
+  pending: PendingImage;
+  context: GenerationLoadingContext;
+}) {
   const progress = useStalledProgress(true, false);
   const colorFocus = Math.floor(Date.now() / 1400) % Math.max(1, context.colors.length);
   const colors = context.colors.length ? context.colors : ["#111111", "#666666", "#f4f1ec"];
@@ -2933,7 +3575,11 @@ function PendingImageCard({ pending, context }: { pending: PendingImage; context
           </div>
           <div className="flex flex-col gap-2">
             {context.images.slice(0, 2).map((image, index) => (
-              <span key={image.url} className={`overflow-hidden rounded-card border-2 border-ink bg-white ${index === 0 ? "h-8" : "h-11"}`} title={image.label}>
+              <span
+                key={image.url}
+                className={`overflow-hidden rounded-card border-2 border-ink bg-white ${index === 0 ? "h-8" : "h-11"}`}
+                title={image.label}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={image.url} alt="" className="h-full w-full object-contain" />
               </span>
@@ -3007,8 +3653,8 @@ function _DeadActiveRun(props: {
   }, [brandRunId(run.decoded)]);
 
   const tabs: { key: TabKey; label: string; ready: boolean; loading: boolean; emoji: string }[] = [
-    { key: "studio",  label: "Studio",  ready: true,                                  emoji: "◇", loading: false },
-    { key: "brand",   label: "Brand",   ready: true,                                  emoji: "◐", loading: false },
+    { key: "studio", label: "Studio", ready: true, emoji: "◇", loading: false },
+    { key: "brand", label: "Brand", ready: true, emoji: "◐", loading: false },
   ];
 
   return (
@@ -3031,7 +3677,9 @@ function _DeadActiveRun(props: {
                 <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-pink dot-pulse align-middle" />
               )}
               {!t.loading && t.ready && t.key !== "brand" && (
-                <span className={`ml-2 inline-block w-1.5 h-1.5 rounded-full align-middle ${isActive ? "bg-pink" : "bg-ink"}`} />
+                <span
+                  className={`ml-2 inline-block w-1.5 h-1.5 rounded-full align-middle ${isActive ? "bg-pink" : "bg-ink"}`}
+                />
               )}
             </button>
           );
@@ -3041,14 +3689,20 @@ function _DeadActiveRun(props: {
       {/* tab content */}
       <div className="min-h-[300px]">
         {tab === "studio" && <MiniAssetsPanel run={run} designing={designing} />}
-        {tab === "brand"  && <Step1View decoded={run.decoded} designed={run.designed} />}
+        {tab === "brand" && <Step1View decoded={run.decoded} designed={run.designed} />}
       </div>
     </section>
   );
 }
 
 function PendingPanel({
-  title, subtitle, generating, onGenerate, ctaLabel, ctaDisabled = false, tilesCount = 1,
+  title,
+  subtitle,
+  generating,
+  onGenerate,
+  ctaLabel,
+  ctaDisabled = false,
+  tilesCount = 1,
 }: {
   title: string;
   subtitle: string;
@@ -3134,10 +3788,13 @@ function ChatPanel({ run, designing }: { run: Run; designing: boolean }) {
   useEffect(() => {
     const minis = run.minis || [];
     setMessages(
-      minis.slice().reverse().flatMap((m) => [
-        { role: "user", id: `u-${m.id}`, prompt: m.prompt } as ChatMsg,
-        { role: "assistant", id: `a-${m.id}`, prompt: m.prompt, html: m.html } as ChatMsg,
-      ])
+      minis
+        .slice()
+        .reverse()
+        .flatMap((m) => [
+          { role: "user", id: `u-${m.id}`, prompt: m.prompt } as ChatMsg,
+          { role: "assistant", id: `a-${m.id}`, prompt: m.prompt, html: m.html } as ChatMsg,
+        ]),
     );
   }, [brandRunId(run.decoded), run.minis]);
 
@@ -3155,7 +3812,7 @@ function ChatPanel({ run, designing }: { run: Run; designing: boolean }) {
       const id = liveIdRef.current;
       if (!id) return;
       setMessages((msgs) =>
-        msgs.map((m) => (m.id === id && m.role === "assistant" ? { ...m, html: accumulatedRef.current } : m))
+        msgs.map((m) => (m.id === id && m.role === "assistant" ? { ...m, html: accumulatedRef.current } : m)),
       );
     });
   }
@@ -3226,7 +3883,9 @@ function ChatPanel({ run, designing }: { run: Run; designing: boolean }) {
       }
       const finalHtml = accumulatedRef.current.replace(/^```html\n?/, "").replace(/\n?```$/, "");
       setMessages((msgs) =>
-        msgs.map((m) => (m.id === asstId && m.role === "assistant" ? { ...m, html: finalHtml, streaming: false } : m))
+        msgs.map((m) =>
+          m.id === asstId && m.role === "assistant" ? { ...m, html: finalHtml, streaming: false } : m,
+        ),
       );
       // persist
       const all = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]") as Run[];
@@ -3303,7 +3962,19 @@ function ChatPanel({ run, designing }: { run: Run; designing: boolean }) {
                   aria-label="Copy"
                   className="w-7 h-7 flex items-center justify-center bg-ink text-white rounded-full hover:bg-dark-gray"
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
                 </button>
                 <button
                   onClick={() => {
@@ -3317,12 +3988,27 @@ function ChatPanel({ run, designing }: { run: Run; designing: boolean }) {
                   aria-label="Download"
                   className="w-7 h-7 flex items-center justify-center bg-cream border-2 border-ink text-ink rounded-full"
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
                 </button>
-                <span className="text-caption text-dark-gray ml-auto">{(m.html.length / 1024).toFixed(1)}KB</span>
+                <span className="text-caption text-dark-gray ml-auto">
+                  {(m.html.length / 1024).toFixed(1)}KB
+                </span>
               </div>
             </div>
-          )
+          ),
         )}
       </div>
 
@@ -3358,7 +4044,11 @@ function ChatPanel({ run, designing }: { run: Run; designing: boolean }) {
             {streaming ? "…" : "Send"}
           </button>
         </div>
-        {error && <p className="mt-2 text-caption text-dark-gray"><b>Error:</b> {error}</p>}
+        {error && (
+          <p className="mt-2 text-caption text-dark-gray">
+            <b>Error:</b> {error}
+          </p>
+        )}
       </div>
     </aside>
   );
@@ -3399,7 +4089,9 @@ function MiniAssetsPanel({ run, designing = false }: { run: Run; designing?: boo
       return;
     }
     doc.open();
-    doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:1rem;font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#000;}</style></head><body>`);
+    doc.write(
+      `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:1rem;font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#000;}</style></head><body>`,
+    );
 
     let inFence = false;
 
@@ -3457,7 +4149,11 @@ function MiniAssetsPanel({ run, designing = false }: { run: Run; designing?: boo
                 accumulatedRef.current += delta;
                 // Strip code fences inline as they arrive
                 let toWrite = delta;
-                if (!inFence && accumulatedRef.current.length <= delta.length + 10 && accumulatedRef.current.startsWith("```")) {
+                if (
+                  !inFence &&
+                  accumulatedRef.current.length <= delta.length + 10 &&
+                  accumulatedRef.current.startsWith("```")
+                ) {
                   inFence = true;
                   toWrite = "";
                 } else if (inFence && delta.includes("```")) {
@@ -3469,7 +4165,9 @@ function MiniAssetsPanel({ run, designing = false }: { run: Run; designing?: boo
                 if (toWrite) doc.write(toWrite); // ← incremental render, no React re-render
                 flushCount();
               }
-            } catch { /* ignore parse errors */ }
+            } catch {
+              /* ignore parse errors */
+            }
           }
         }
       }
@@ -3495,7 +4193,9 @@ function MiniAssetsPanel({ run, designing = false }: { run: Run; designing?: boo
       setPrompt("");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
-      try { doc.close(); } catch {}
+      try {
+        doc.close();
+      } catch {}
     } finally {
       setStreaming(false);
     }
@@ -3527,7 +4227,10 @@ function MiniAssetsPanel({ run, designing = false }: { run: Run; designing?: boo
           {MINI_PROMPT_PRESETS.map((p) => (
             <button
               key={p}
-              onClick={() => { setPrompt(p); generate(p); }}
+              onClick={() => {
+                setPrompt(p);
+                generate(p);
+              }}
               disabled={streaming}
               className="text-caption bg-cream border-2 border-ink rounded-pill px-3 py-1 hover:bg-pink/30 disabled:opacity-50"
             >
@@ -3539,10 +4242,7 @@ function MiniAssetsPanel({ run, designing = false }: { run: Run; designing?: boo
           <span className="uppercase tracking-widest text-dark-gray">Context →</span>
           <span className="text-dark-gray">brand tokens ✓</span>
           {run.designed ? (
-            <button
-              onClick={() => setShowDesign(s => !s)}
-              className="text-ink hover:underline"
-            >
+            <button onClick={() => setShowDesign((s) => !s)} className="text-ink hover:underline">
               design.md ✓ ({run.designed.design_md?.length ?? 0} chars · {showDesign ? "hide" : "view"})
             </button>
           ) : designing ? (
@@ -3559,7 +4259,11 @@ function MiniAssetsPanel({ run, designing = false }: { run: Run; designing?: boo
             {run.designed.design_md}
           </pre>
         )}
-        {error && <p className="mt-3 text-bodysm"><b>Error:</b> {error}</p>}
+        {error && (
+          <p className="mt-3 text-bodysm">
+            <b>Error:</b> {error}
+          </p>
+        )}
       </Card>
 
       {/* iframe is ALWAYS mounted so contentDocument stays stable across renders.
@@ -3582,7 +4286,9 @@ function MiniAssetsPanel({ run, designing = false }: { run: Run; designing?: boo
 
       {run.minis && run.minis.length > 0 && (
         <div>
-          <p className="text-caption uppercase tracking-widest text-dark-gray mb-3">Saved snippets ({run.minis.length})</p>
+          <p className="text-caption uppercase tracking-widest text-dark-gray mb-3">
+            Saved snippets ({run.minis.length})
+          </p>
           <div className="grid gap-6 md:grid-cols-2 items-stretch">
             {run.minis.map((m) => (
               <MiniAssetCard key={m.id} mini={m} />
@@ -3625,7 +4331,19 @@ function MiniAssetCard({ mini }: { mini: MiniAsset }) {
           aria-label="Copy HTML"
           className="w-9 h-9 flex items-center justify-center bg-ink text-white rounded-full hover:bg-dark-gray"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
         </button>
         <button
           onClick={() => {
@@ -3639,7 +4357,20 @@ function MiniAssetCard({ mini }: { mini: MiniAsset }) {
           aria-label="Download"
           className="w-9 h-9 flex items-center justify-center bg-cream border-2 border-ink text-ink rounded-full hover:bg-white"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
         </button>
         <span className="text-caption text-dark-gray ml-auto">{(mini.html.length / 1024).toFixed(1)}KB</span>
       </div>
@@ -3653,7 +4384,9 @@ function VisualAssetsPanel({ assets }: { assets: AssetPack }) {
       {assets.mocked && (
         <Card className="mb-4">
           <p className="text-bodysm">
-            <span className="bg-yellow px-2 py-0.5 rounded-pill text-caption uppercase font-bold mr-2">Mocked</span>
+            <span className="bg-yellow px-2 py-0.5 rounded-pill text-caption uppercase font-bold mr-2">
+              Mocked
+            </span>
             Placeholders in the brand&apos;s primary color. Swap the n8n
             <code className="bg-offset px-2 py-0.5 rounded mx-1">Mock URLs</code>
             node for Fal calls — prompts already include OG-image reference + personality + tokens.
@@ -3664,19 +4397,62 @@ function VisualAssetsPanel({ assets }: { assets: AssetPack }) {
         {assets.assets.map((a, i) => (
           <Card key={i} className="h-full">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-caption uppercase tracking-widest text-dark-gray">{a.type.replace(/_/g, " ")}</p>
-              <p className="text-caption text-dark-gray">{a.width}×{a.height}</p>
+              <p className="text-caption uppercase tracking-widest text-dark-gray">
+                {a.type.replace(/_/g, " ")}
+              </p>
+              <p className="text-caption text-dark-gray">
+                {a.width}×{a.height}
+              </p>
             </div>
             <div className="flex-1 flex items-center justify-center bg-cream rounded-card border-2 border-ink overflow-hidden min-h-[180px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={a.url} alt={a.type} className="max-w-full max-h-72 object-contain" />
             </div>
             <div className="mt-3 flex gap-2">
-              <a href={a.url} download title="Download" aria-label="Download" className="w-9 h-9 flex items-center justify-center bg-ink text-white rounded-full hover:bg-dark-gray">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <a
+                href={a.url}
+                download
+                title="Download"
+                aria-label="Download"
+                className="w-9 h-9 flex items-center justify-center bg-ink text-white rounded-full hover:bg-dark-gray"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
               </a>
-              <a href={a.url} target="_blank" rel="noreferrer" title="Open" aria-label="Open" className="w-9 h-9 flex items-center justify-center bg-cream border-2 border-ink text-ink rounded-full hover:bg-white">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <a
+                href={a.url}
+                target="_blank"
+                rel="noreferrer"
+                title="Open"
+                aria-label="Open"
+                className="w-9 h-9 flex items-center justify-center bg-cream border-2 border-ink text-ink rounded-full hover:bg-white"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
               </a>
             </div>
           </Card>
@@ -3687,8 +4463,14 @@ function VisualAssetsPanel({ assets }: { assets: AssetPack }) {
 }
 
 function _UnusedAssetsSection({
-  run, onGenAll, onGenVisuals, onGenDesign, onGenLanding,
-  designing, genAssets, building,
+  run,
+  onGenAll,
+  onGenVisuals,
+  onGenDesign,
+  onGenLanding,
+  designing,
+  genAssets,
+  building,
 }: {
   run: Run;
   onGenAll: () => void;
@@ -3742,7 +4524,9 @@ function _UnusedAssetsSection({
           {run.assets?.mocked && (
             <Card className="mb-4">
               <p className="text-bodysm">
-                <span className="bg-yellow px-2 py-0.5 rounded-pill text-caption uppercase font-bold mr-2">Mocked</span>
+                <span className="bg-yellow px-2 py-0.5 rounded-pill text-caption uppercase font-bold mr-2">
+                  Mocked
+                </span>
                 Placeholders in the brand&apos;s primary color. Swap the n8n
                 <code className="bg-offset px-2 py-0.5 rounded mx-1">Mock URLs</code>
                 node for Fal calls — prompts already include OG-image reference + personality + tokens.
@@ -3762,14 +4546,35 @@ function _UnusedAssetsSection({
               {run.assets.assets.map((a, i) => (
                 <Card key={i}>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-caption uppercase tracking-widest text-dark-gray">{a.type.replace(/_/g, " ")}</p>
-                    <p className="text-caption text-dark-gray">{a.width}×{a.height}</p>
+                    <p className="text-caption uppercase tracking-widest text-dark-gray">
+                      {a.type.replace(/_/g, " ")}
+                    </p>
+                    <p className="text-caption text-dark-gray">
+                      {a.width}×{a.height}
+                    </p>
                   </div>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={a.url} alt={a.type} className="w-full rounded-card border-2 border-ink bg-cream" />
+                  <img
+                    src={a.url}
+                    alt={a.type}
+                    className="w-full rounded-card border-2 border-ink bg-cream"
+                  />
                   <div className="mt-3 flex gap-2">
-                    <a href={a.url} download className="text-bodysm bg-ink text-white px-4 py-1.5 rounded-pill">Download</a>
-                    <a href={a.url} target="_blank" rel="noreferrer" className="text-bodysm bg-cream border-2 border-ink text-ink px-4 py-1.5 rounded-pill">Open</a>
+                    <a
+                      href={a.url}
+                      download
+                      className="text-bodysm bg-ink text-white px-4 py-1.5 rounded-pill"
+                    >
+                      Download
+                    </a>
+                    <a
+                      href={a.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-bodysm bg-cream border-2 border-ink text-ink px-4 py-1.5 rounded-pill"
+                    >
+                      Open
+                    </a>
                   </div>
                 </Card>
               ))}
@@ -3814,14 +4619,20 @@ function _UnusedAssetsSection({
       {!run.assets && !run.designed && !run.built && !anyGenerating && (
         <Card>
           <p className="text-bodysm text-dark-gray">
-            Click <b>✨ Generate all assets</b> to spin up the visual pack and design system in parallel.
-            The landing page renders after the design system is ready.
+            Click <b>✨ Generate all assets</b> to spin up the visual pack and design system in parallel. The
+            landing page renders after the design system is ready.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={onGenVisuals} className="text-bodysm bg-cream border-2 border-ink text-ink px-4 py-1.5 rounded-pill">
+            <button
+              onClick={onGenVisuals}
+              className="text-bodysm bg-cream border-2 border-ink text-ink px-4 py-1.5 rounded-pill"
+            >
               Visuals only
             </button>
-            <button onClick={onGenDesign} className="text-bodysm bg-cream border-2 border-ink text-ink px-4 py-1.5 rounded-pill">
+            <button
+              onClick={onGenDesign}
+              className="text-bodysm bg-cream border-2 border-ink text-ink px-4 py-1.5 rounded-pill"
+            >
               Design system only
             </button>
           </div>
@@ -3845,13 +4656,27 @@ function Step2View({ designed }: { designed: Designed }) {
               <p className="text-bodysm mt-3 text-dark-gray">{s.positioning_statement}</p>
             </div>
             <div className="text-bodysm">
-              {s.target_audience && (<p className="mb-2"><span className="text-caption uppercase text-dark-gray">Audience: </span>{s.target_audience}</p>)}
-              {s.mood_keywords && (<p className="mb-2"><span className="text-caption uppercase text-dark-gray">Mood: </span>{s.mood_keywords.join(" · ")}</p>)}
+              {s.target_audience && (
+                <p className="mb-2">
+                  <span className="text-caption uppercase text-dark-gray">Audience: </span>
+                  {s.target_audience}
+                </p>
+              )}
+              {s.mood_keywords && (
+                <p className="mb-2">
+                  <span className="text-caption uppercase text-dark-gray">Mood: </span>
+                  {s.mood_keywords.join(" · ")}
+                </p>
+              )}
               {s.voice_examples && (
                 <div className="mt-3">
                   <p className="text-caption uppercase text-dark-gray">Voice</p>
                   <ul className="mt-1 space-y-1">
-                    {s.voice_examples.map((v, i) => <li key={i} className="italic">&quot;{v}&quot;</li>)}
+                    {s.voice_examples.map((v, i) => (
+                      <li key={i} className="italic">
+                        &quot;{v}&quot;
+                      </li>
+                    ))}
                   </ul>
                 </div>
               )}
@@ -3936,7 +4761,10 @@ function Step3View({ built }: { built: Built }) {
             <button
               onClick={() => {
                 const w = window.open();
-                if (w) { w.document.write(built.html); w.document.close(); }
+                if (w) {
+                  w.document.write(built.html);
+                  w.document.close();
+                }
               }}
               className="text-bodysm bg-pink text-ink px-4 py-1.5 rounded-pill"
             >
@@ -3991,7 +4819,9 @@ function parseDoc(html: string) {
   if (typeof window === "undefined") return { headHtml: "", bodyHtml: html };
   try {
     const doc = new DOMParser().parseFromString(html, "text/html");
-    const links = Array.from(doc.head.querySelectorAll('link[rel="stylesheet"], link[rel="preconnect"], link[as="font"]'));
+    const links = Array.from(
+      doc.head.querySelectorAll('link[rel="stylesheet"], link[rel="preconnect"], link[as="font"]'),
+    );
     const styles = Array.from(doc.head.querySelectorAll("style"));
     const headHtml = [...links, ...styles].map((n) => n.outerHTML).join("\n");
     const bodyHtml = doc.body.innerHTML;

@@ -14,9 +14,7 @@ type ProbeResult = {
   detail?: string;
 };
 
-async function withTimeout(
-  fn: (signal: AbortSignal) => Promise<ProbeResult>,
-): Promise<ProbeResult> {
+async function withTimeout(fn: (signal: AbortSignal) => Promise<ProbeResult>): Promise<ProbeResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
   try {
@@ -153,9 +151,7 @@ export async function GET() {
   ]);
 
   const services = { n8n, moonshot, firecrawl, fal };
-  const ok = Object.values(services).every(
-    (s) => s.status === "up" || s.status === "skipped",
-  );
+  const ok = Object.values(services).every((s) => s.status === "up" || s.status === "skipped");
 
   return NextResponse.json(
     {

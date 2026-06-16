@@ -2,37 +2,45 @@
 
 Back to the [main README](../README.md) · [Setup guide](SETUP.md)
 
+Open Design is an MIT-licensed, full-stack template that shows how to combine the latest AI and automation tools into something that could be a real product. Paste in a website and it turns it into a brand kit, a design system, reusable CSS, and a generator for HTML components and image assets you can hand off to AI agents or use as social/marketing creative.
+
+The goal isn't just another pretty n8n workflow. It's to show how to take that same power and wire it into a **real app** — a front end, a real user experience, an end product you can extend into whatever you want.
+
+## The flow
+
 Paste a URL, get back:
 
-1. **Brand decoded** — Firecrawl scrapes the site (markdown, summary, branding tokens, screenshot). Kimi K2.6 writes hero copy + tone in the brand's voice.
-2. **Design system** — Two-step Kimi pass: strategy (archetype, positioning, voice examples) → full `design.md` spec (palette, typography, components, spacing, expansion ideas).
-3. **Marketing assets** — Hero / Instagram post / OG card / IG story, all in the brand's actual colors. Generated via **Fal AI** (`fal-ai/gpt-image-2`), 4 images per run from one HTTP node iterating over prompt items.
-4. **Landing page** — Outline → 8-section responsive HTML with inline CSS, rendered live in an iframe and downloadable.
+1. **Brand decoded** — Firecrawl scrapes the site and returns markdown, a summary, and most importantly the **branding** (logo, color palette, fonts). Kimi K2.6 turns that into hero copy and tone in the brand's voice.
+2. **Design system** — a brand strategist pass (archetype, positioning, voice, mood keywords, what to avoid) feeds a second pass that writes a **`design.md`** plus a ready-to-use **`index.css`**. Drop the `design.md` into Claude Code, Codex, Lovable, or Bolt and get far better design output than prompting cold.
+3. **Generate — HTML** — describe what you want ("a pricing page with $15 and $30 tiers") and it streams back a responsive HTML page in the brand's system. Copy it, stack it as context for the next generation, or download it.
+4. **Generate — images** — describe an asset ("an Instagram post for Linear Projects") and it generates on-brand image assets via **Fal** (GPT Image 2), passing the logo + palette + archetype as context so the output stays coherent.
 
-A `/history` view is sketched out for showing past brand kits per mock user — currently driven by client-side state, but `db/schema.sql` is ready for when you wire up the Postgres node in n8n.
+## Why it's built this way
 
-## The whole thing is one n8n workflow
+- **n8n is the entire backend.** Four webhook routes on one canvas — no Express, no Hono. The visual graph *is* the documentation of how the app works.
+- **`design.md` as a portable context format.** A simple standard (popularized by Google) for handing brand + design context to any AI agent. Better results, no re-prompting.
+- **Every model is swappable.** Kimi K2.6 is the default, but each LLM node is a dropdown — add credentials and switch any step to Anthropic, OpenAI, or Google.
+- **Fal is one gateway to many models.** GPT Image 2 here, but the same node reaches most diffusion and video models — extending image generation into video is a node swap away.
+- **It's a starting point, not a replacement.** Pull down any brand, play with its design system, spin off assets, and extend the template into whatever you're building.
 
-Four webhook entry points, all on one canvas:
+## One n8n workflow, four routes
 
 ```
-POST /webhook/brand/decode  →  Firecrawl → Kimi: Copy   → Save brand_run    → Decode respond
-POST /webhook/brand/design  →  Kimi: Strategy → Stash → Kimi: Design.md → Save design_spec → Design respond
-POST /webhook/brand/html    →  Kimi: Outline  → Stash → Kimi: HTML       → Save landing_page → HTML respond
-POST /webhook/brand/assets  →  Build prompts (4 items) → Fal: Generate → Shape → Aggregate → Assets respond
+POST /webhook/brand/decode  →  Firecrawl scrape (markdown + branding)  →  Kimi: copy/tone        →  respond
+POST /webhook/brand/design  →  Kimi: brand strategy  →  stash  →  Kimi: design.md + index.css     →  respond
+POST /webhook/brand/html    →  Kimi: outline (JSON sections)  →  stash  →  Kimi: HTML             →  respond
+POST /webhook/brand/assets  →  build prompt (palette + logo + archetype)  →  Fal: GPT Image 2  →  shape → aggregate → respond
 ```
-
-That's the whole backend. No Express, no Hono — just n8n (+ optional Postgres).
 
 ## Stack
 
-- **n8n** 2.17.7 (self-hosted, SQLite for n8n's own state)
-- **Firecrawl** v2 API — scrape + branding extraction (colors, fonts, logo, components, spacing)
-- **Kimi K2.6** + **Kimi K2 Turbo Preview** — Moonshot's chat completions API (OpenAI-compatible)
-- **Fal AI** (`fal-ai/gpt-image-2`) — 4 marketing images per run, generated in the `assets` branch
-- **Neon Postgres** — schema in `db/schema.sql` for brand runs / design specs / landing pages / asset packs (persistence is opt-in; the workflow currently responds without writing — wire up the Postgres node when you want history)
-- **Next.js 16** (App Router, Turbopack) — frontend wrapping the n8n webhooks
-- **Tailwind 4** — DevDigest design system (cream/ink/pink, offset cards, pill buttons)
+- **n8n** 2.17.7 (self-hosted, the whole backend)
+- **Firecrawl** v2 — scrape + branding extraction (logo, palette, fonts, components)
+- **Kimi K2.6** (Moonshot, OpenAI-compatible) — copy, strategy, `design.md`, HTML. Swappable per node.
+- **Fal** (`fal-ai/gpt-image-2`) — on-brand image assets; gateway to many image/video models
+- **Next.js 16** (App Router, Turbopack) — the front end, proxying the n8n webhooks
+- **Tailwind 4** — DevDigest design system
+- **Neon Postgres** *(optional)* — schema in `db/schema.sql` for persisting runs
 
 ## Repo layout
 
@@ -45,22 +53,15 @@ That's the whole backend. No Express, no Hono — just n8n (+ optional Postgres)
 ├── db/
 │   └── schema.sql               # Neon Postgres schema (optional persistence)
 ├── docs/
-│   └── canvas.png               # screenshot of the workflow canvas
+│   ├── OVERVIEW.md              # this file
+│   ├── SETUP.md                 # run it locally
+│   ├── ARCHITECTURE.md
+│   ├── SEQUENCES.md
+│   └── canvas.png
 └── web/                         # Next.js app
-    ├── app/
-    │   ├── page.tsx             # 4-step UI
-    │   ├── layout.tsx
-    │   ├── globals.css          # DD design tokens
-    │   └── api/
-    │       ├── decode/route.ts      # → /webhook/brand/decode
-    │       ├── design/route.ts      # → /webhook/brand/design
-    │       ├── html/route.ts        # → /webhook/brand/html
-    │       ├── assets/route.ts      # → /webhook/brand/assets (Fal images)
-    │       ├── fonts/route.ts       # → /webhook/brand/fonts
-    │       ├── generate/route.ts    # legacy single-shot, uses N8N_WEBHOOK_URL
-    │       ├── index-css/route.ts   # Kimi-streamed brand index.css
-    │       └── mini-asset/route.ts  # Kimi-streamed UI snippets in the brand system
-    └── package.json
+    └── app/
+        ├── page.tsx             # the UI
+        └── api/                 # thin proxies → /webhook/brand/*
 ```
 
 ## Runs against
@@ -68,5 +69,5 @@ That's the whole backend. No Express, no Hono — just n8n (+ optional Postgres)
 - Firecrawl (cloud) — `api.firecrawl.dev/v2`
 - Moonshot (cloud) — `api.moonshot.ai/v1`
 - Fal (cloud) — `fal.run/fal-ai/gpt-image-2`
-- Neon (cloud) — Postgres, optional (only if you wire up persistence)
+- Neon (cloud) — Postgres, optional
 - Everything else — local

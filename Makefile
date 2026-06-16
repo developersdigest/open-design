@@ -2,7 +2,7 @@
 # Run `make` or `make help` to see what's here.
 
 .DEFAULT_GOAL := help
-.PHONY: help dev n8n web import db typecheck lint check clean smoke cli-e2e docker seed validate teardown
+.PHONY: help dev n8n web import db typecheck lint check clean smoke cli-e2e docker validate teardown
 
 help: ## Show this help.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -43,9 +43,6 @@ smoke: ## Hit every n8n webhook and report pass/fail.
 
 cli-e2e: ## Validate and import the template with n8n CLI in an isolated temp profile.
 	bash scripts/e2e-cli.sh
-
-seed: ## Seed 3 sample brand runs (stripe/vercel/linear) by hitting webhooks.
-	bash scripts/seed-history.sh
 
 clean: ## Remove node_modules, .next, and tsbuildinfo.
 	rm -rf web/node_modules web/.next web/tsconfig.tsbuildinfo web/next-env.d.ts

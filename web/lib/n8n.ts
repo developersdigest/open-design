@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 
 const BASE = process.env.N8N_BASE_URL ?? "http://localhost:5678/webhook/brand";
 
@@ -46,11 +46,12 @@ export async function proxyToN8n(route: string, body: unknown): Promise<NextResp
       {
         error: "empty response from n8n",
         upstream_status: res.status,
-        hint: res.status === 404
-          ? "the webhook isn't registered — import the workflow and toggle Active in the n8n UI."
-          : route === "assets"
-            ? "n8n returned no body. Restart n8n with FAL_KEY set, then try generating again."
-            : "check the n8n execution log for this run.",
+        hint:
+          res.status === 404
+            ? "the webhook isn't registered — import the workflow and toggle Active in the n8n UI."
+            : route === "assets"
+              ? "n8n returned no body. Restart n8n with FAL_KEY set, then try generating again."
+              : "check the n8n execution log for this run.",
         request_id: requestId,
       },
       { status: 502 },

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 mock.module("next/headers", () => ({
   headers: async () => new Headers({ "x-request-id": "test-request-id" }),
@@ -20,11 +20,12 @@ describe("proxyToN8n", () => {
 
   test("happy path — returns parsed JSON with upstream status", async () => {
     const payload = { ok: true, value: 42 };
-    global.fetch = mock(async () =>
-      new Response(JSON.stringify(payload), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }),
+    global.fetch = mock(
+      async () =>
+        new Response(JSON.stringify(payload), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
     ) as unknown as typeof fetch;
 
     const res = await proxyToN8n("generate", { foo: "bar" });
@@ -46,9 +47,7 @@ describe("proxyToN8n", () => {
   });
 
   test("empty 404 response — hint mentions importing the workflow", async () => {
-    global.fetch = mock(async () =>
-      new Response("", { status: 404 }),
-    ) as unknown as typeof fetch;
+    global.fetch = mock(async () => new Response("", { status: 404 })) as unknown as typeof fetch;
 
     const res = await proxyToN8n("generate", {});
     expect(res.status).toBe(502);
@@ -59,8 +58,8 @@ describe("proxyToN8n", () => {
   });
 
   test("non-JSON response — returns 502 with non-JSON error", async () => {
-    global.fetch = mock(async () =>
-      new Response("<html>oops</html>", { status: 200 }),
+    global.fetch = mock(
+      async () => new Response("<html>oops</html>", { status: 200 }),
     ) as unknown as typeof fetch;
 
     const res = await proxyToN8n("generate", {});

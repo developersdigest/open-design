@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -48,12 +48,22 @@ function tokensBlock(t: Tokens): string {
 }
 
 function stripFences(s: string): string {
-  return s.replace(/^```(?:css)?\n?/i, "").replace(/\n?```\s*$/i, "").trim();
+  return s
+    .replace(/^```(?:css)?\n?/i, "")
+    .replace(/\n?```\s*$/i, "")
+    .trim();
 }
 
 export async function POST(req: NextRequest) {
   const key = process.env.KIMI_API_KEY;
-  if (!key) return new Response(JSON.stringify({ error: "KIMI_API_KEY not set", hint: "cp web/.env.example web/.env.local and fill in your Moonshot key" }), { status: 500 });
+  if (!key)
+    return new Response(
+      JSON.stringify({
+        error: "KIMI_API_KEY not set",
+        hint: "cp web/.env.example web/.env.local and fill in your Moonshot key",
+      }),
+      { status: 500 },
+    );
 
   const { design_md = "", tokens = {}, model = "kimi-k2-turbo-preview" } = await req.json();
 
@@ -86,7 +96,10 @@ export async function POST(req: NextRequest) {
 
   if (!upstream.ok) {
     const text = await upstream.text();
-    return new Response(JSON.stringify({ error: "kimi failed", upstream_status: upstream.status, body: text.slice(0, 500) }), { status: 502 });
+    return new Response(
+      JSON.stringify({ error: "kimi failed", upstream_status: upstream.status, body: text.slice(0, 500) }),
+      { status: 502 },
+    );
   }
 
   const json = await upstream.json();

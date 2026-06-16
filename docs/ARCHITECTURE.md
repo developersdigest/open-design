@@ -82,4 +82,4 @@ Two routes stream Server-Sent Events from Kimi directly, bypassing n8n:
 
 These bypass n8n because n8n's webhook response node buffers the full response before returning - incompatible with SSE. Everything else is request/response and goes through `proxyToN8n`.
 
-The HTML step is currently buffered (n8n returns the full document at once). Streaming it through SSE is on the roadmap.
+The HTML step is currently buffered (n8n returns the full document at once). Streaming it through SSE is a natural next extension.

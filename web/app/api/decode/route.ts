@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { proxyToN8n } from "@/lib/n8n";
 
 export const runtime = "nodejs";
@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
 }
 
 function brandRunId(url: string) {
-  return `local-${hostnameOf(url || "brand").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
+  return `local-${hostnameOf(url || "brand")
+    .replace(/[^a-z0-9]+/gi, "-")
+    .toLowerCase()}`;
 }
 
 function hostnameOf(url: string) {

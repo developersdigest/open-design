@@ -69,7 +69,7 @@ The web app reads **one file — `web/.env.local`** — and it's almost empty, b
 
 | Variable | Required? | What it's for |
 |---|---|---|
-| `KIMI_API_KEY` | ✅ | Moonshot/Kimi key for the streamed UI snippets (`/api/mini-asset`, `/api/index-css`). Get one at [platform.moonshot.ai](https://platform.moonshot.ai/) |
+| `KIMI_API_KEY` | Yes | Moonshot/Kimi key for the streamed UI snippets (`/api/mini-asset`, `/api/index-css`). Get one at [platform.moonshot.ai](https://platform.moonshot.ai/) |
 | `N8N_BASE_URL` | optional | Defaults to `http://localhost:5678/webhook/brand`. Only set it if n8n runs elsewhere (tunnel/remote host). |
 
 ```bash

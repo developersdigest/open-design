@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -90,17 +90,34 @@ function tokensBlock(t: Tokens): string {
 
 export async function POST(req: NextRequest) {
   const key = process.env.KIMI_API_KEY;
-  if (!key) return new Response(JSON.stringify({ error: "KIMI_API_KEY not set", hint: "cp web/.env.example web/.env.local and fill in your Moonshot key" }), { status: 500 });
+  if (!key)
+    return new Response(
+      JSON.stringify({
+        error: "KIMI_API_KEY not set",
+        hint: "cp web/.env.example web/.env.local and fill in your Moonshot key",
+      }),
+      { status: 500 },
+    );
 
-  const { prompt, design_md = "", index_css = "", tokens = {}, assets = {}, reference_images = [], reference_html = [], model } = await req.json();
+  const {
+    prompt,
+    design_md = "",
+    index_css = "",
+    tokens = {},
+    assets = {},
+    reference_images = [],
+    reference_html = [],
+    model,
+  } = await req.json();
   if (!prompt) return new Response(JSON.stringify({ error: "prompt required" }), { status: 400 });
 
   const assetLines: string[] = [];
-  if (assets.logo_url)    assetLines.push(`logo_url:    ${assets.logo_url}`);
+  if (assets.logo_url) assetLines.push(`logo_url:    ${assets.logo_url}`);
   if (assets.favicon_url) assetLines.push(`favicon_url: ${assets.favicon_url}`);
-  if (assets.og_url)      assetLines.push(`og_url:      ${assets.og_url}`);
+  if (assets.og_url) assetLines.push(`og_url:      ${assets.og_url}`);
   const assetsBlock = assetLines.length
-    ? "# BRAND ASSETS (logo_url may be used for marks; og_url is only reference context unless explicitly selected)\n" + assetLines.join("\n")
+    ? "# BRAND ASSETS (logo_url may be used for marks; og_url is only reference context unless explicitly selected)\n" +
+      assetLines.join("\n")
     : "# BRAND ASSETS\n(none — use a text wordmark for the brand name)";
   const referenceHtmlBlock = referenceHtmlContextBlock(reference_html);
 
@@ -143,7 +160,10 @@ export async function POST(req: NextRequest) {
             "",
             "# SELECTED IMAGE ASSETS",
             "These image URLs may be embedded directly in the HTML when useful. Use them for decorative images, backgrounds, cards, mockups, previews, or hero media if the prompt naturally calls for imagery.",
-            ...refImages.map((image, index) => `${index + 1}. ${image.name || "reference image"}: ${image.asset_url || image.original_url || image.url}`),
+            ...refImages.map(
+              (image, index) =>
+                `${index + 1}. ${image.name || "reference image"}: ${image.asset_url || image.original_url || image.url}`,
+            ),
           ].join("\n"),
         },
       ]
@@ -169,7 +189,10 @@ export async function POST(req: NextRequest) {
 
   if (!upstream.ok || !upstream.body) {
     const text = await upstream.text();
-    return new Response(JSON.stringify({ error: "kimi failed", upstream_status: upstream.status, body: text.slice(0, 500) }), { status: 502 });
+    return new Response(
+      JSON.stringify({ error: "kimi failed", upstream_status: upstream.status, body: text.slice(0, 500) }),
+      { status: 502 },
+    );
   }
 
   return new Response(upstream.body, {
@@ -188,12 +211,16 @@ function referenceHtmlContextBlock(refs: ReferenceHtml[]): string {
     "# SELECTED HTML CONTEXT",
     "Use these previous snippets as context for structure, components, wording density, and interaction patterns. Reuse or adapt the HTML only when it helps the new prompt.",
     "",
-    ...normalized.map((ref, index) => [
-      `## ${index + 1}. ${ref.name || ref.prompt || "HTML reference"}`,
-      ref.prompt ? `Prompt: ${ref.prompt}` : "",
-      "HTML:",
-      ref.html,
-    ].filter(Boolean).join("\n")),
+    ...normalized.map((ref, index) =>
+      [
+        `## ${index + 1}. ${ref.name || ref.prompt || "HTML reference"}`,
+        ref.prompt ? `Prompt: ${ref.prompt}` : "",
+        "HTML:",
+        ref.html,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    ),
   ].join("\n\n");
 }
 
@@ -216,26 +243,28 @@ function cleanText(value: unknown, max: number): string {
 
 async function normalizeReferenceImages(images: ReferenceImage[]) {
   const refs = Array.isArray(images) ? images.slice(0, 6) : [];
-  const normalized = await Promise.all(refs.map(async (image) => {
-    if (!image?.url) return null;
-    if (/^data:image\/(png|jpe?g|webp);base64,/i.test(image.url)) return image;
-    if (!/^https?:\/\//i.test(image.url)) return null;
-    try {
-      const res = await fetch(image.url);
-      if (!res.ok) return null;
-      const contentType = res.headers.get("content-type") || "image/png";
-      if (!/^image\/(png|jpe?g|webp)/i.test(contentType)) return null;
-      const buffer = Buffer.from(await res.arrayBuffer());
-      if (buffer.byteLength > 8 * 1024 * 1024) return null;
-      return {
-        ...image,
-        asset_url: image.asset_url || image.url,
-        original_url: image.url,
-        url: `data:${contentType};base64,${buffer.toString("base64")}`,
-      };
-    } catch {
-      return null;
-    }
-  }));
+  const normalized = await Promise.all(
+    refs.map(async (image) => {
+      if (!image?.url) return null;
+      if (/^data:image\/(png|jpe?g|webp);base64,/i.test(image.url)) return image;
+      if (!/^https?:\/\//i.test(image.url)) return null;
+      try {
+        const res = await fetch(image.url);
+        if (!res.ok) return null;
+        const contentType = res.headers.get("content-type") || "image/png";
+        if (!/^image\/(png|jpe?g|webp)/i.test(contentType)) return null;
+        const buffer = Buffer.from(await res.arrayBuffer());
+        if (buffer.byteLength > 8 * 1024 * 1024) return null;
+        return {
+          ...image,
+          asset_url: image.asset_url || image.url,
+          original_url: image.url,
+          url: `data:${contentType};base64,${buffer.toString("base64")}`,
+        };
+      } catch {
+        return null;
+      }
+    }),
+  );
   return normalized.filter((image): image is ReferenceImage => Boolean(image));
 }

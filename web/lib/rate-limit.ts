@@ -28,10 +28,7 @@ function defaultKey(req: Request): string {
   return "unknown";
 }
 
-export function rateLimit(
-  req: Request,
-  opts: RateLimitOptions = {}
-): RateLimitResult {
+export function rateLimit(req: Request, opts: RateLimitOptions = {}): RateLimitResult {
   const limit = opts.limit ?? 30;
   const windowMs = opts.windowMs ?? 60_000;
   const keyFn = opts.key ?? defaultKey;
@@ -75,6 +72,6 @@ export function rateLimitResponse({
         "Retry-After": String(Math.ceil(resetMs / 1000)),
         "X-RateLimit-Remaining": String(remaining),
       },
-    }
+    },
   );
 }

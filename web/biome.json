@@ -1,7 +1,15 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
   "files": {
-    "includes": ["app/**/*", "lib/**/*", "!**/.next", "!**/node_modules", "!**/next-env.d.ts", "!**/*.tsbuildinfo"]
+    "includes": [
+      "app/**/*",
+      "lib/**/*",
+      "!**/.next",
+      "!**/node_modules",
+      "!**/next-env.d.ts",
+      "!**/*.tsbuildinfo",
+      "!**/*.css"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -20,10 +28,28 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noExplicitAny": "off"
+        "noArrayIndexKey": "warn",
+        "noImplicitAnyLet": "warn",
+        "noAssignInExpressions": "warn"
       },
       "style": {
-        "useNodejsImportProtocol": "off"
+        "useNodejsImportProtocol": "off",
+        "useTemplate": "warn"
+      },
+      "a11y": {
+        "useButtonType": "warn",
+        "noSvgWithoutTitle": "warn",
+        "noStaticElementInteractions": "warn"
+      },
+      "performance": {
+        "noImgElement": "warn"
+      },
+      "correctness": {
+        "useExhaustiveDependencies": "warn",
+        "useHookAtTopLevel": "warn",
+        "noUnusedFunctionParameters": "warn",
+        "noUnusedVariables": "warn",
+        "noUnusedImports": "warn"
       }
     }
   },

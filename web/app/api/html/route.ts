@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { proxyToN8n } from "@/lib/n8n";
 
 export const runtime = "nodejs";

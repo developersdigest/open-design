@@ -9,7 +9,7 @@
 //   import { sql } from "@/lib/db";
 //   const rows = await sql`SELECT * FROM brand_run WHERE id = ${id}`;
 
-import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+import { type NeonQueryFunction, neon } from "@neondatabase/serverless";
 
 type SqlClient = NeonQueryFunction<false, false>;
 
@@ -35,8 +35,5 @@ export function getDb(): SqlClient {
 // use it directly: await sql`SELECT ...`. The underlying neon client is
 // initialized lazily on first call.
 export const sql: SqlClient = ((strings: TemplateStringsArray, ...values: unknown[]) => {
-  return (getDb() as unknown as (s: TemplateStringsArray, ...v: unknown[]) => unknown)(
-    strings,
-    ...values,
-  );
+  return (getDb() as unknown as (s: TemplateStringsArray, ...v: unknown[]) => unknown)(strings, ...values);
 }) as SqlClient;

@@ -47,9 +47,7 @@ function emit(level: Level, msg: string, fields?: Fields, staticFields?: Fields)
     ...(fields || {}),
   };
 
-  const line = isPretty()
-    ? JSON.stringify(record, null, 2)
-    : JSON.stringify(record);
+  const line = isPretty() ? JSON.stringify(record, null, 2) : JSON.stringify(record);
   console.log(line);
 }
 

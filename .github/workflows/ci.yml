@@ -22,6 +22,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run lint
+      - run: bun run build
 
   workflow-json:
     runs-on: ubuntu-latest

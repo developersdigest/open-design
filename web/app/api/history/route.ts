@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { sql, isDbConfigured } from "@/lib/db";
+import { type NextRequest, NextResponse } from "next/server";
+import { isDbConfigured, sql } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -8,9 +8,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
 
   const limitRaw = parseInt(searchParams.get("limit") ?? "20", 10);
-  const limit = Number.isFinite(limitRaw)
-    ? Math.min(100, Math.max(1, limitRaw))
-    : 20;
+  const limit = Number.isFinite(limitRaw) ? Math.min(100, Math.max(1, limitRaw)) : 20;
   const email = searchParams.get("email")?.trim() || null;
 
   if (!isDbConfigured()) {
@@ -20,7 +18,7 @@ export async function GET(req: NextRequest) {
         persisted: false,
         hint: "set DATABASE_URL and add Postgres nodes to the n8n workflow to enable history",
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 
@@ -50,7 +48,7 @@ export async function GET(req: NextRequest) {
         persisted: true,
         hint: "schema may not be applied; run `make db`",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

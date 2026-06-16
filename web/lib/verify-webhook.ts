@@ -89,9 +89,7 @@ export function verifyHmacSignature(
       if (!signatureHeader || !secret) return false;
 
       const trimmed = signatureHeader.trim();
-      const provided = trimmed.startsWith("sha256=")
-        ? trimmed.slice("sha256=".length)
-        : trimmed;
+      const provided = trimmed.startsWith("sha256=") ? trimmed.slice("sha256=".length) : trimmed;
 
       // Hex-only sanity check — any non-hex char means malformed.
       if (provided.length === 0 || !/^[0-9a-fA-F]+$/.test(provided)) {
