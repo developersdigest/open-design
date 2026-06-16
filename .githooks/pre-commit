@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pre-commit hook for n8n-demo
+# Pre-commit hook for open-design
 set -u
 
 FAILED=0

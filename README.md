@@ -24,7 +24,7 @@ Three pieces: **n8n** (with the workflow imported + credentials set), a tiny **`
 
 ```bash
 # 1. Pull it down
-git clone https://github.com/developersdigest/n8n-demo.git && cd n8n-demo
+git clone https://github.com/developersdigest/open-design.git && cd open-design
 
 # 2. Install the web app
 cd web && bun install && cd ..

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# teardown.sh — destructive cleanup for n8n-demo.
+# teardown.sh — destructive cleanup for open-design.
 # Removes node_modules, build artifacts, and the n8n_data bind mount.
 
 set -euo pipefail
