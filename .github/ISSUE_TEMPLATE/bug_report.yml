@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a problem with the n8n demo
+description: Report a problem with Developers Digest Open Design
 labels: [bug]
 body:
   - type: markdown

@@ -1,6 +1,6 @@
 # Open Design - Web
 
-Next.js 16 frontend for the Open Design n8n demo. This README covers the `web/` app only - see the root `README.md` for the full picture (n8n workflows, end-to-end flow, deployment).
+Next.js 16 frontend for the Developers Digest Open Design. This README covers the `web/` app only - see the root `README.md` for the full picture (n8n workflows, end-to-end flow, deployment).
 
 ## Quickstart
 

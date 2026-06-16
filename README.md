@@ -1,4 +1,4 @@
-# Open Design — an n8n demo
+# Developers Digest Open Design
 
 Turn any URL into a brand kit, design system, marketing assets, and a production-quality landing page - powered by a single self-hosted n8n workflow with a Next.js 16 frontend.
 
