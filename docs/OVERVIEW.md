@@ -56,8 +56,7 @@ POST /webhook/brand/assets  →  build prompt (palette + logo + archetype)  → 
 │   ├── OVERVIEW.md              # this file
 │   ├── SETUP.md                 # run it locally
 │   ├── ARCHITECTURE.md
-│   ├── SEQUENCES.md
-│   └── canvas.png
+│   └── SEQUENCES.md
 └── web/                         # Next.js app
     └── app/
         ├── page.tsx             # the UI

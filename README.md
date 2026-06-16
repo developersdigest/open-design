@@ -10,8 +10,6 @@ Most n8n demos show a workflow in isolation. This shows n8n as the **backend of 
   <img src="https://img.youtube.com/vi/slKIDNp1bo4/maxresdefault.jpg" alt="Open Design — watch the demo" width="100%">
 </a>
 
-![the workflow canvas](docs/canvas.png)
-
 ---
 
 - [What it does](docs/OVERVIEW.md)
