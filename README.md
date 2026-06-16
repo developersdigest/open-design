@@ -2,7 +2,7 @@
 
 Turn any URL into a brand kit, design system, marketing assets, and a landing page — powered by a single self-hosted **n8n** workflow with a **Next.js 16** frontend.
 
-### ▶ Watch the demo
+### Watch the demo
 
 <a href="https://youtu.be/slKIDNp1bo4" title="Open Design — watch the demo on YouTube">
   <img src="https://img.youtube.com/vi/slKIDNp1bo4/maxresdefault.jpg" alt="Open Design — watch the demo" width="100%">
@@ -12,6 +12,7 @@ Turn any URL into a brand kit, design system, marketing assets, and a landing pa
 
 ---
 
-### 📖 [What it does](docs/OVERVIEW.md) · 🚀 [Setup](docs/SETUP.md) · 🗺️ [Roadmap](ROADMAP.md)
+- [What it does](docs/OVERVIEW.md)
+- [Setup](docs/SETUP.md)
 
 MIT — see [LICENSE](LICENSE).
